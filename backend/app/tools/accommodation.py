@@ -7,9 +7,7 @@ import os
 
 from app.config.config import settings
 
-GOOGLE_PLACES_API_ENDPOINT = (
-    "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-)
+GOOGLE_PLACES_API_ENDPOINT = "https://places.googleapis.com/v1/places:searchNearby"
 
 
 class Accommodation(BaseModel):
@@ -31,10 +29,6 @@ def get_accommodation(location: Coordinate, radius: int = 5) -> list[Accommodati
     # Convert radius from km to meters (Google API uses meters)
     radius_meters = radius * 1000
 
-    # Extract latitude and longitude from Coordinate
-    lat = location.latitude
-    lon = location.longitude
-
     location_area = {
         "circle": {
             "center": {"latitude": location.latitude, "longitude": location.longitude},
@@ -42,32 +36,35 @@ def get_accommodation(location: Coordinate, radius: int = 5) -> list[Accommodati
         }
     }
 
-    params = {
+    request_body = {
         "locationRestriction": location_area,
-        "regionCode": "GB",
+        # "regionCode": "GB", # 
         "includedTypes": ["lodging"],
         "maxResultCount": 5,
     }
 
+    # 2. Define the Field Mask (Comma separated list of fields you want)
+    field_mask = (
+        "places.displayName,places.formattedAddress,places.googleMapsUri,places.rating"
+    )
+
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": settings.GOOGLE_API_KEY,
-        "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline",
+        "X-Goog-FieldMask": field_mask,
     }
 
     try:
-        # Make the request
-        response = requests.get(
-            GOOGLE_PLACES_API_ENDPOINT, params=params, headers=headers
+        response = requests.post(
+            GOOGLE_PLACES_API_ENDPOINT, json=request_body, headers=headers
         )
         response.raise_for_status()
-
         data = response.json()
 
         accommodation_data = data.get("places", [])
         results = [
             Accommodation(
-                name=acom["displayName"],
+                name=acom["displayName"]["text"],
                 address=acom["formattedAddress"],
                 map_link=acom["googleMapsUri"],
                 rating=acom["rating"],
@@ -78,5 +75,5 @@ def get_accommodation(location: Coordinate, radius: int = 5) -> list[Accommodati
         raise Exception(f"Error making request to Google Places API: {str(e)}")
     except Exception as e:
         raise e
-    
+
     return results
