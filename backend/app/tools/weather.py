@@ -2,6 +2,8 @@ from typing import Literal
 
 from langchain.tools import tool
 from pydantic import BaseModel, Field
+from pydantic_extra_types.coordinate import Latitude, Longitude, Coordinate
+
 
 class WeatherInput(BaseModel):
     """Input for weather queries."""
@@ -16,10 +18,10 @@ class WeatherInput(BaseModel):
     )
 
 @tool(args_schema=WeatherInput)
-def get_weather(location: str, units: str = "celsius", include_forecast: bool = False) -> str:
+def get_weather(location_name: str, units: str = "celsius", include_forecast: bool = False) -> str:
     """Get current weather and optional forecast."""
     temp = 22 if units == "celsius" else 72
-    result = f"Current weather in {location}: {temp} degrees {units[0].upper()}"
+    result = f"Current weather in {location_name}: {temp} degrees {units[0].upper()}"
     if include_forecast:
         result += "\nNext 5 days: Sunny"
     return result
