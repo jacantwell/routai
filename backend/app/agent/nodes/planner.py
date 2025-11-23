@@ -31,6 +31,7 @@ def planner_node(state: AgentState) -> Dict[str, Any]:
         Dictionary with new messages to add to state
     """
     logger.info("Planner node: Processing user request")
+    logger.info(f"Message history: {state.messages}")
     
     response = _llm_with_tools.invoke(
         state.messages,

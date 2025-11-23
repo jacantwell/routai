@@ -66,3 +66,9 @@ class AgentState(BaseModel):
         default=None,
         description="Daily routes in ascending order."
     )
+
+    # Phase 4: User confirmation
+    user_confirmed: bool = Field(
+        default=False,
+        description="Whether user has confirmed the route overview"
+    )

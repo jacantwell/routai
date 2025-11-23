@@ -9,9 +9,13 @@ from app.agent.nodes.logistics import find_accommodation_node
 from app.agent.nodes.planner import planner_node, parse_requirements_node
 from app.agent.nodes.router import calculate_route_node, calculate_segments_node
 from app.agent.nodes.optimiser import optimiser_node
+from app.agent.nodes.reviewer import reviewer_node
 from app.agent.nodes.writer import itinerary_writer_node
-from app.agent.graph.routing import route_planner
-from app.agent.graph.routing import route_optimiser
+from app.agent.graph.routing import (
+    route_planner,
+    route_optimiser,
+    route_reviewer,
+)
 from app.tools import get_location
 from app.tools import OPTIMISATION_TOOLS
 
@@ -33,13 +37,17 @@ def create_route_planner_graph() -> CompiledStateGraph:
         - Generate Waypoints: Divides route into daily segments
         - Find Accommodation: Searches for lodging at each segment endpoint
     
-    Phase 3 - Optimization (Agentic):
-        - Should Optimize: Checks if route needs improvement
-        - Optimizer: Analyzes route and makes modifications via tools
+    Phase 3 - Optimization (Agentic & Confirmation):
+        - Optimizer: Analyzes route, makes modifications, interprets user feedback
         - Optimizer Tools: Executes route modification tools
+        - Optimizer: Decides if route is confirmed (calls RouteConfirmed tool)
     
-    Phase 4 - Output (Generative):
-        - Writer: Creates friendly itinerary summary
+    Phase 4 - Review & Output:
+        - Reviewer: Presents overview
+          - If NOT confirmed: Asks for confirmation → END (wait for user)
+          - If confirmed: Confirms route → Writer
+        - [If waiting: User responds → Back to Planner → Optimizer interprets feedback]
+        - Writer: Creates detailed itinerary when confirmed
     
     Returns:
         Compiled LangGraph workflow with memory persistence
@@ -59,16 +67,18 @@ def create_route_planner_graph() -> CompiledStateGraph:
     workflow.add_node("generate_waypoints", calculate_segments_node)
     workflow.add_node("find_accommodation", find_accommodation_node)
 
-    # === Phase 3: Route Optimization Nodes ===
+    # === Phase 3: Optimization & Confirmation ===
     workflow.add_node("optimiser", optimiser_node)
     workflow.add_node("optimiser_tools", ToolNode(OPTIMISATION_TOOLS))
 
-    # === Phase 4: Output Generation ===
+    # === Phase 4: Review & Output ===
+    workflow.add_node("reviewer", reviewer_node)
     workflow.add_node("writer", itinerary_writer_node)
     
     # === Define Workflow Edges ===
     
-    # Entry point
+    # Entry point - always start from planner
+    # Planner is smart enough to detect existing state and route appropriately
     workflow.set_entry_point("planner")
     
     # Phase 1: Planning - conversational loop
@@ -78,6 +88,7 @@ def create_route_planner_graph() -> CompiledStateGraph:
         {
             "planner_tools": "planner_tools",  # Execute location lookup tools
             "parser": "parser",                 # Validate requirements
+            "optimiser": "optimiser",           # User feedback after review
             END: END,                           # Wait for user response
         },
     )
@@ -90,18 +101,36 @@ def create_route_planner_graph() -> CompiledStateGraph:
     workflow.add_edge("calculate_route", "generate_waypoints")
     workflow.add_edge("generate_waypoints", "find_accommodation")
 
-    # Optimization loop
+    # Phase 3: Optimization & Confirmation loop
+    workflow.add_edge("find_accommodation", "optimiser")  # First time to optimizer
+    
     workflow.add_conditional_edges(
-        "find_accommodation",
+        "optimiser",
         route_optimiser,
         {
             "optimiser_tools": "optimiser_tools",  # Execute modification tools
-            "writer": "writer",                    # Optimization complete
+            "reviewer": "reviewer",                # Move to review (confirmed or first time)
         },
     )
     workflow.add_edge("optimiser_tools", "optimiser")  # Loop back after tool execution
     
-    # Phase 4: Final output
+    # Phase 4: Review & Output
+    workflow.add_conditional_edges(
+        "reviewer",
+        route_reviewer,
+        {
+            "writer": "writer",  # Route confirmed, generate final itinerary
+            END: END,            # Wait for user response
+        },
+    )
+    
+    # When user responds after reviewer (and not confirmed):
+    # - Conversation resumes at entry point (planner)
+    # - Planner will see we have route/segments and route to END
+    # - This triggers optimizer on next invoke
+    # Actually, we need planner to be smarter or have a different entry point
+    
+    # Phase 5: Final output
     workflow.add_edge("writer", END)
     
     # === Compile with Persistence ===
