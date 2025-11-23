@@ -1,6 +1,7 @@
 from .accommodation import find_accommodation_at_location, search_accommodation_for_day
 from .location import get_location
 from .route import (
+    confirm_route,
     get_route_summary,
     adjust_daily_distance,
     add_intermediate_waypoint,
@@ -19,6 +20,7 @@ PLANNING_TOOLS = [
 
 # Tools for the route optimization/modification phase
 OPTIMISATION_TOOLS = [
+    confirm_route,
     get_route_summary,
     get_segment_details,
     search_accommodation_for_day,
