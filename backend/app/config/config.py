@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     CORS_ORGINS: list[str] = ["http://localhost:3000"]
 
-    CLAUDE_API_KEY: Optional[str] = ""
+    ANTHROPIC_API_KEY: Optional[str] = ""
 
     GOOGLE_API_KEY: Optional[str] = ""
 
