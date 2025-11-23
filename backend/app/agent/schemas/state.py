@@ -3,7 +3,7 @@ from typing import Annotated, List, Optional
 from pydantic import BaseModel, Field
 from langchain_core.messages import BaseMessage
 
-from app.models.models import Route, Waypoint, Location
+from app.models.models import Route, Segment, Location
 
 
 class RouteRequirements(BaseModel):
@@ -55,14 +55,14 @@ class AgentState(BaseModel):
         description="Validated route requirements from the user"
     )
     
-    # Phase 2: Route calculation
+    # Phase 2: The overall route - from requirements.origin to requirements.destination
     route: Optional[Route] = Field(
         default=None,
-        description="Calculated route with polyline and distance"
+        description="Calculated overall route from requirements.origin to requirements.destination"
     )
     
-    # Phase 3: Waypoint generation
-    waypoints: Optional[List[Waypoint]] = Field(
+    # Phase 3:  List of segments that when connected form the overall route
+    segments: Optional[List[Segment]] = Field(
         default=None,
-        description="Daily waypoints along the route"
+        description="Daily routes in ascending order."
     )

@@ -4,7 +4,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 
 from app.agent.graph.workflow import app, create_route_planner_graph
-from app.agent.config.logging import setup_logging
+from app.config.logging import setup_logging
 from app.agent.schemas.state import AgentState
 
 # Setup logging for examples
