@@ -5,11 +5,15 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.state import CompiledStateGraph
 
 from app.agent.schemas.state import AgentState
+from app.agent.nodes.logistics import find_accommodation_node
 from app.agent.nodes.planner import planner_node, parse_requirements_node
-from app.agent.nodes.router import calculate_route_node, generate_waypoints_node
+from app.agent.nodes.router import calculate_route_node, calculate_segments_node
+from app.agent.nodes.optimiser import optimiser_node
 from app.agent.nodes.writer import itinerary_writer_node
 from app.agent.graph.routing import route_planner
-from app.tools.route import get_location
+from app.agent.graph.routing import route_optimiser
+from app.tools import get_location
+from app.tools import OPTIMISATION_TOOLS
 
 logger = logging.getLogger(__name__)
 
@@ -17,18 +21,24 @@ logger = logging.getLogger(__name__)
 def create_route_planner_graph() -> CompiledStateGraph:
     """Create and compile the route planner workflow graph.
     
-    The workflow consists of three main phases:
+    The workflow consists of four main phases:
     
     Phase 1 - Planning (Conversational):
-        - Planner: Gathers requirements from user
+        - Planner: Gathers requirements from user via conversation
         - Planner Tools: Executes location lookups
         - Parser: Validates and stores requirements
     
     Phase 2 - Calculation (Deterministic):
         - Calculate Route: Gets route from Google Routes API
         - Generate Waypoints: Divides route into daily segments
+        - Find Accommodation: Searches for lodging at each segment endpoint
     
-    Phase 3 - Output (Generative):
+    Phase 3 - Optimization (Agentic):
+        - Should Optimize: Checks if route needs improvement
+        - Optimizer: Analyzes route and makes modifications via tools
+        - Optimizer Tools: Executes route modification tools
+    
+    Phase 4 - Output (Generative):
         - Writer: Creates friendly itinerary summary
     
     Returns:
@@ -46,9 +56,14 @@ def create_route_planner_graph() -> CompiledStateGraph:
     
     # === Phase 2: Route Calculation Nodes ===
     workflow.add_node("calculate_route", calculate_route_node)
-    workflow.add_node("generate_waypoints", generate_waypoints_node)
-    
-    # === Phase 3: Output Generation ===
+    workflow.add_node("generate_waypoints", calculate_segments_node)
+    workflow.add_node("find_accommodation", find_accommodation_node)
+
+    # === Phase 3: Route Optimization Nodes ===
+    workflow.add_node("optimiser", optimiser_node)
+    workflow.add_node("optimiser_tools", ToolNode(OPTIMISATION_TOOLS))
+
+    # === Phase 4: Output Generation ===
     workflow.add_node("writer", itinerary_writer_node)
     
     # === Define Workflow Edges ===
@@ -56,26 +71,37 @@ def create_route_planner_graph() -> CompiledStateGraph:
     # Entry point
     workflow.set_entry_point("planner")
     
-    # Planning phase - conversational loop
+    # Phase 1: Planning - conversational loop
     workflow.add_conditional_edges(
         "planner",
         route_planner,
         {
-            "planner_tools": "planner_tools",  # Execute tools
+            "planner_tools": "planner_tools",  # Execute location lookup tools
             "parser": "parser",                 # Validate requirements
             END: END,                           # Wait for user response
         },
     )
-    workflow.add_edge("planner_tools", "planner")  # Loop back after tools
+    workflow.add_edge("planner_tools", "planner")  # Loop back after tool execution
     
-    # Transition to deterministic phase
+    # Transition to calculation phase
     workflow.add_edge("parser", "calculate_route")
     
-    # Calculation phase - deterministic sequence
+    # Phase 2: Calculation - deterministic sequence
     workflow.add_edge("calculate_route", "generate_waypoints")
-    workflow.add_edge("generate_waypoints", "writer")
+    workflow.add_edge("generate_waypoints", "find_accommodation")
+
+    # Optimization loop
+    workflow.add_conditional_edges(
+        "find_accommodation",
+        route_optimiser,
+        {
+            "optimiser_tools": "optimiser_tools",  # Execute modification tools
+            "writer": "writer",                    # Optimization complete
+        },
+    )
+    workflow.add_edge("optimiser_tools", "optimiser")  # Loop back after tool execution
     
-    # Final output
+    # Phase 4: Final output
     workflow.add_edge("writer", END)
     
     # === Compile with Persistence ===

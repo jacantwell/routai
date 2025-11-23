@@ -5,7 +5,7 @@ from langchain_core.messages import ToolMessage
 from app.agent.schemas.state import AgentState, RouteRequirements
 from app.agent.config.llm import create_llm_with_tools
 from app.agent.config.constants import PLANNER_SYSTEM_PROMPT
-from app.tools.route import get_location
+from app.tools import get_location
 
 logger = logging.getLogger(__name__)
 

@@ -15,12 +15,12 @@ _llm = create_llm()
 def itinerary_writer_node(state: AgentState) -> Dict[str, Any]:
     """Generate a friendly itinerary summary for the user.
     
-    This node takes the calculated route and waypoints and uses an LLM
+    This node takes the calculated route and segments and uses an LLM
     to generate a natural language, day-by-day itinerary that's easy
     for the user to understand and use.
     
     Args:
-        state: Current agent state with route, waypoints, and requirements
+        state: Current agent state with route, segments, and requirements
         
     Returns:
         Dictionary with itinerary message to send to user
@@ -30,7 +30,7 @@ def itinerary_writer_node(state: AgentState) -> Dict[str, Any]:
     """
     requirements = state.requirements
     route = state.route
-    waypoints = state.waypoints
+    segments = state.segments
     
     # Validate all required data is present
     if not requirements:
@@ -43,17 +43,17 @@ def itinerary_writer_node(state: AgentState) -> Dict[str, Any]:
         logger.error(error_msg)
         raise ValueError(error_msg)
     
-    if not waypoints:
-        error_msg = "Itinerary generation requires generated waypoints"
+    if not segments:
+        error_msg = "Itinerary generation requires generated segments"
         logger.error(error_msg)
         raise ValueError(error_msg)
     
     logger.info("Generating itinerary summary")
     
-    # Format waypoints for display
-    waypoints_str = "\n".join(
+    # Format segments for display
+    segments_str = "\n".join(
         f"Day {i+1}: {wp}" 
-        for i, wp in enumerate(waypoints)
+        for i, wp in enumerate(segments)
     )
     
     # Construct the system prompt with route data
@@ -62,7 +62,7 @@ def itinerary_writer_node(state: AgentState) -> Dict[str, Any]:
         destination=requirements.destination.name,
         distance_km=route.distance / METERS_PER_KM,
         daily_distance_km=requirements.daily_distance_km,
-        waypoints=waypoints_str,
+        segments=segments_str,
     )
     
     try:

@@ -2,9 +2,9 @@ import logging
 from typing import Dict, Any, List
 
 from app.agent.schemas.state import AgentState
-from app.agent.utils import fetch_route, calculate_waypoints
+from app.utils.utils import fetch_route, calculate_segments
 from app.agent.config.constants import METERS_PER_KM
-from app.models.models import Waypoint
+from app.models.models import Segment
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +66,8 @@ def calculate_route_node(state: AgentState) -> Dict[str, Any]:
         raise RuntimeError(error_msg) from e
 
 
-def generate_waypoints_node(state: AgentState) -> Dict[str, Any]:
-    """Generate daily waypoints along the calculated route.
+def calculate_segments_node(state: AgentState) -> Dict[str, Any]:
+    """Generate daily segments along the calculated route.
     
     This node divides the route into daily segments based on the
     user's target daily distance.
@@ -76,44 +76,43 @@ def generate_waypoints_node(state: AgentState) -> Dict[str, Any]:
         state: Current agent state with route and requirements
         
     Returns:
-        Dictionary with generated waypoints
+        Dictionary with generated segments
         
     Raises:
         ValueError: If route or requirements are missing
-        RuntimeError: If waypoint generation fails
+        RuntimeError: If segment generation fails
     """
     route = state.route
     requirements = state.requirements
     
     if not route:
-        error_msg = "Waypoint generation requires a calculated route"
+        error_msg = "Segment generation requires a calculated route"
         logger.error(error_msg)
         raise ValueError(error_msg)
     
     if not requirements:
-        error_msg = "Waypoint generation requires validated requirements"
+        error_msg = "Segment generation requires validated requirements"
         logger.error(error_msg)
         raise ValueError(error_msg)
     
     daily_distance_m = requirements.daily_distance_km * METERS_PER_KM
     
     logger.info(
-        f"Generating waypoints for {requirements.daily_distance_km}km/day target "
+        f"Generating segments for {requirements.daily_distance_km}km/day target "
         f"(total distance: {route.distance / METERS_PER_KM:.2f}km)"
     )
     
     try:
-        waypoints: List[Waypoint] = calculate_waypoints(
+        segments: List[Segment] = calculate_segments(
             route.polyline,
-            daily_distance_m,
-            route.distance,
+            daily_distance_m
         )
         
-        logger.info(f"Generated {len(waypoints)} waypoints")
+        logger.info(f"Generated {len(segments)} segments")
         
-        return {"waypoints": waypoints}
+        return {"segments": segments}
         
     except Exception as e:
-        error_msg = f"Waypoint generation failed: {str(e)}"
+        error_msg = f"Segment generation failed: {str(e)}"
         logger.error(error_msg)
         raise RuntimeError(error_msg) from e
