@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
-from app.api.routes.chat import router
+from app.api.routes.chat import router as chat_router
+from app.api.routes.route import router as route_router
 from app.config.logging import setup_logging
 from app.api.services.session_manager import session_manager
 
@@ -84,5 +85,6 @@ def ping():
     return "pong"
 
 # Include routers
-app.include_router(router, tags=["routes"])
+app.include_router(chat_router, tags=["chats"])
+app.include_router(route_router, tags=["routes"])
 

@@ -9,6 +9,7 @@ from langchain_core.runnables import RunnableConfig
 
 from app.agent.graph.workflow import app
 from app.api.services import session_manager
+from app.agent.schemas.state import AgentState
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +131,7 @@ async def stream_chat_response(
         yield f"data: {json.dumps(error_event)}\n\n"
 
 
-def get_session_state(session_id: str) -> Dict[str, Any]:
+def get_session_state(session_id: str) -> AgentState:
     """Get the current state of a session.
     
     Args:
@@ -150,7 +151,9 @@ def get_session_state(session_id: str) -> Dict[str, Any]:
     try:
         # Get the current state from LangGraph
         state = app.get_state(config)
-        
+
+        return AgentState.model_validate(state.values)
+
         result = {
             "session_id": session_id,
             "message_count": len(state.values.get("messages", [])),
