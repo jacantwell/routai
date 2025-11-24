@@ -1,20 +1,7 @@
-from typing import Literal
-
 from langchain.tools import tool
-from pydantic import BaseModel, Field
 
 
-class WeatherInput(BaseModel):
-    """Input for weather queries."""
-
-    location: str = Field(description="City name or coordinates")
-    units: Literal["celsius", "fahrenheit"] = Field(
-        default="celsius", description="Temperature unit preference"
-    )
-    include_forecast: bool = Field(default=False, description="Include 5-day forecast")
-
-
-@tool(args_schema=WeatherInput)
+@tool
 def get_weather(
     location_name: str, units: str = "celsius", include_forecast: bool = False
 ) -> str:

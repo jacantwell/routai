@@ -7,7 +7,7 @@ from datetime import datetime
 from collections import defaultdict
 from threading import Lock
 
-from app.agent.schemas.state import AgentState
+from app.models.state import AgentState
 
 logger = logging.getLogger(__name__)
 

@@ -1,10 +1,10 @@
 import logging
 
-from langchain.tools import tool, ToolRuntime
+from langchain.tools import ToolRuntime, tool
 
-from app.models.models import Accommodation
-from app.utils.utils import get_accommodation
-from app.tools.utils import validate_segments_state, geocode_location
+from app.models import Accommodation
+from app.tools.utils import geocode_location, validate_segments_state
+from app.utils import get_accommodation
 
 logger = logging.getLogger(__name__)
 

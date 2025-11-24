@@ -1,14 +1,13 @@
 import logging
 from typing import Dict, Any
+
 from langchain_core.messages import HumanMessage
 
-from app.agent.schemas.state import AgentState
-from app.agent.config.llm import create_llm
-from app.agent.config.constants import ITINERARY_PROMPT_TEMPLATE, METERS_PER_KM
+from app.models import AgentState
+from app.agent.config import ITINERARY_PROMPT_TEMPLATE, create_llm
 
 logger = logging.getLogger(__name__)
 
-# Initialize LLM for itinerary writing
 _llm = create_llm()
 
 
@@ -60,7 +59,7 @@ def itinerary_writer_node(state: AgentState) -> Dict[str, Any]:
     system_prompt = ITINERARY_PROMPT_TEMPLATE.format(
         origin=requirements.origin.name,
         destination=requirements.destination.name,
-        distance_km=route.distance / METERS_PER_KM,
+        distance_km=route.distance / 1000,
         daily_distance_km=requirements.daily_distance_km,
         segments=segments_str,
     )

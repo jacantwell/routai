@@ -5,15 +5,9 @@ from langchain.tools import ToolRuntime
 from pydantic_extra_types.coordinate import Coordinate
 import requests
 
-from app.models.models import Route, Segment, Location
-from app.agent.schemas.state import RouteRequirements, AgentState
-from app.config.config import settings
-from app.utils.utils import (
-    get_accommodation,
-    calculate_segments,
-)
-
-GOOGLE_GEOCODING_API_ENDPOINT = "https://maps.googleapis.com/maps/api/geocode/json"
+from app.config import settings
+from app.models import AgentState, RouteRequirements, Location, Route, Segment
+from app.utils import calculate_segments, get_accommodation
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +75,7 @@ def geocode_location(place_name: str) -> Coordinate:
     params = {"address": place_name, "key": settings.GOOGLE_API_KEY}
 
     try:
-        response = requests.get(GOOGLE_GEOCODING_API_ENDPOINT, params=params)
+        response = requests.get(settings.GOOGLE_GEOCODING_API_ENDPOINT, params=params)
         response.raise_for_status()
 
         data = response.json()

@@ -1,4 +1,5 @@
 from typing import Optional
+
 from pydantic import BaseModel
 from pydantic_extra_types.coordinate import Coordinate
 

@@ -5,7 +5,7 @@ from langchain_core.runnables import RunnableConfig
 
 from app.agent.graph.workflow import app, create_route_planner_graph
 from app.config.logging import setup_logging
-from app.agent.schemas.state import AgentState
+from app.models.state import AgentState
 
 # Setup logging for examples
 setup_logging(level="INFO")

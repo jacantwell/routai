@@ -9,7 +9,7 @@ from langchain_core.runnables import RunnableConfig
 
 from app.agent.graph.workflow import app
 from app.api.services import session_manager
-from app.agent.schemas.state import AgentState
+from app.models.state import AgentState
 
 logger = logging.getLogger(__name__)
 

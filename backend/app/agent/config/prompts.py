@@ -1,13 +1,3 @@
-# Distance conversion
-METERS_PER_KM = 1000
-
-# LLM Configuration
-DEFAULT_MODEL = "claude-haiku-4-5-20251001"
-DEFAULT_TEMPERATURE = 0.3
-DEFAULT_MAX_TOKENS = 1024
-DEFAULT_MAX_RETRIES = 2
-
-# System prompts
 PLANNER_SYSTEM_PROMPT = """You are a bikepacking route planner assistant.
 
 Your responsibilities:

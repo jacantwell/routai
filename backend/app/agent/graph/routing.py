@@ -2,14 +2,14 @@ import logging
 
 from langgraph.graph import END
 
-from app.agent.schemas.state import AgentState
+from app.models import AgentState
 
 logger = logging.getLogger(__name__)
 
 
 def route_planner(
     state: AgentState,
-):  # TODO: Add typing
+) -> str:
     """Determine next step after planner node.
 
     This function examines the state and last message to decide routing:

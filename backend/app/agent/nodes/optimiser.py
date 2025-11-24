@@ -1,9 +1,8 @@
 import logging
 from typing import Dict, Any
 
-from app.agent.schemas.state import AgentState
-from app.agent.config.llm import create_llm_with_tools
-from app.agent.config.constants import OPTIMISER_SYSTEM_PROMPT
+from app.agent.config import OPTIMISER_SYSTEM_PROMPT, create_llm_with_tools
+from app.models import AgentState
 from app.tools import OPTIMISATION_TOOLS
 
 logger = logging.getLogger(__name__)
@@ -21,7 +20,7 @@ def optimiser_node(state: AgentState) -> Dict[str, Any]:
     1. Analyzes the current route state
     2. Checks if user's last message indicates confirmation or change request
     3. Uses tools to modify route if needed
-    4. Calls RouteConfirmed tool when user confirms and route is ready
+    4. Calls confirm_route tool when user confirms and route is ready
     
     The optimizer operates in different modes based on context:
     - Initial optimization: Fix accommodation issues, verify requirements
@@ -121,7 +120,7 @@ def _build_optimization_request(state: AgentState) -> Any:
             f"Your tasks:\n"
             f"1. Interpret the user's last message to understand their intent\n"
             f"2. If they want changes: use appropriate tools to modify the route\n"
-            f"3. If they're satisfied and confirming: call the RouteConfirmed tool\n"
+            f"3. If they're satisfied and confirming: call the confirm_route tool\n"
             f"4. If unclear: ask for clarification or make reasonable assumptions\n\n"
             f"Use get_route_summary first to understand the current state, then decide."
         )
@@ -130,7 +129,7 @@ def _build_optimization_request(state: AgentState) -> Any:
         request = (
         f"This is the first optimisation pass. Review the route using "
         f"get_route_summary and identify any issues (e.g., missing accommodation). "
-        f"Do NOT call RouteConfirmed at this stage. "
+        f"Do NOT call confirm_route at this stage. "
         f"After reviewing, provide the overview for the user to evaluate."
     )
     

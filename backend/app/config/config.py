@@ -9,6 +9,12 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    GOOGLE_ROUTES_API_ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes"
+
+    GOOGLE_GEOCODING_API_ENDPOINT = "https://maps.googleapis.com/maps/api/geocode/json"
+
+    GOOGLE_PLACES_API_ENDPOINT = "https://places.googleapis.com/v1/places:searchNearby"
+
     CORS_ORGINS: list[str] = ["http://localhost:3000"]
 
     ANTHROPIC_API_KEY: Optional[str] = ""

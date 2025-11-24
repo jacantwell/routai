@@ -1,16 +1,12 @@
 import random
 
-from geopy.distance import geodesic
 import polyline
-from pydantic_extra_types.coordinate import Coordinate
 import requests
+from app.config import settings
+from app.models import Accommodation, Route, Segment
+from geopy.distance import geodesic
+from pydantic_extra_types.coordinate import Coordinate
 
-from app.config.config import settings
-from app.models.models import Route, Segment, Accommodation
-
-GOOGLE_ROUTES_API_ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes"
-GOOGLE_GEOCODING_API_ENDPOINT = "https://maps.googleapis.com/maps/api/geocode/json"
-GOOGLE_PLACES_API_ENDPOINT = "https://places.googleapis.com/v1/places:searchNearby"
 
 
 def get_elevation_gain(polyline: str) -> int:
@@ -64,7 +60,7 @@ def get_accommodation(location: Coordinate, radius: int = 5) -> list[Accommodati
 
     try:
         response = requests.post(
-            GOOGLE_PLACES_API_ENDPOINT, json=request_body, headers=headers
+            settings.GOOGLE_PLACES_API_ENDPOINT, json=request_body, headers=headers
         )
         response.raise_for_status()
         data = response.json()
@@ -161,7 +157,7 @@ def fetch_route(
 
         try:
             response = requests.post(
-                GOOGLE_ROUTES_API_ENDPOINT, json=request_body, headers=headers
+                settings.GOOGLE_ROUTES_API_ENDPOINT, json=request_body, headers=headers
             )
             response.raise_for_status()
 

@@ -4,7 +4,7 @@ from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.state import CompiledStateGraph
 
-from app.agent.schemas.state import AgentState
+from app.models.state import AgentState
 from app.agent.nodes.logistics import find_accommodation_node
 from app.agent.nodes.planner import planner_node, parse_requirements_node
 from app.agent.nodes.router import calculate_route_node, calculate_segments_node

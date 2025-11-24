@@ -1,37 +1,42 @@
 import logging
 from typing import Optional, Sequence
 
-from langchain.tools import tool, ToolRuntime
+from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import ToolMessage
 from langgraph.types import Command
 
-from app.models.models import Location
-from app.utils.utils import fetch_route
+from app.models import Location
 from app.tools.utils import (
+    convert_place_names_to_locations,
+    geocode_location,
+    recalculate_segments_with_accommodation,
     validate_route_state,
     validate_segments_state,
-    geocode_location,
-    convert_place_names_to_locations,
-    recalculate_segments_with_accommodation,
 )
+from app.utils import fetch_route
 
 logger = logging.getLogger(__name__)
+
 
 @tool
 def confirm_route(runtime: ToolRuntime) -> Command:
     """Signal that the route is ready and user has confirmed.
-    
+
     Use this tool when:
     - User explicitly confirms the route overview is suitable (e.g., "yes", "looks good", "generate itinerary")
     """
 
-    return Command(update={
+    return Command(
+        update={
             "user_confirmed": True,
-            "messages": [ToolMessage(
-                content="Route confirmed. Proceeding to generate detailed itinerary.",
-                tool_call_id=runtime.tool_call_id
-            )]
-        })
+            "messages": [
+                ToolMessage(
+                    content="Route confirmed. Proceeding to generate detailed itinerary.",
+                    tool_call_id=runtime.tool_call_id,
+                )
+            ],
+        }
+    )
 
 
 @tool
@@ -113,11 +118,15 @@ def adjust_daily_distance(runtime: ToolRuntime, new_daily_distance_km: int) -> C
     )
 
     return Command(
-        update={"segments": new_segments, "requirements": updated_requirements,
-                    "messages": [ToolMessage(
-                content="New daily distance set.",
-                tool_call_id=runtime.tool_call_id
-            )]}
+        update={
+            "segments": new_segments,
+            "requirements": updated_requirements,
+            "messages": [
+                ToolMessage(
+                    content="New daily distance set.", tool_call_id=runtime.tool_call_id
+                )
+            ],
+        }
     )
 
 
@@ -194,10 +203,11 @@ def add_intermediate_waypoint(
             "route": new_route,
             "segments": new_segments,
             "requirements": updated_requirements,
-            "messages": [ToolMessage(
-                content="Waypoint added.",
-                tool_call_id=runtime.tool_call_id
-            )]
+            "messages": [
+                ToolMessage(
+                    content="Waypoint added.", tool_call_id=runtime.tool_call_id
+                )
+            ],
         }
     )
 
@@ -260,10 +270,11 @@ def remove_intermediate_waypoint(runtime: ToolRuntime, waypoint_index: int) -> C
             "route": new_route,
             "segments": new_segments,
             "requirements": updated_requirements,
-            "messages": [ToolMessage(
-                content="Waypoint removed.",
-                tool_call_id=runtime.tool_call_id
-            )]
+            "messages": [
+                ToolMessage(
+                    content="Waypoint removed.", tool_call_id=runtime.tool_call_id
+                )
+            ],
         }
     )
 
@@ -360,9 +371,10 @@ def recalculate_complete_route(
             "route": new_route,
             "segments": new_segments,
             "requirements": updated_requirements,
-            "messages": [ToolMessage(
-                content="Route recalculated.",
-                tool_call_id=runtime.tool_call_id
-            )]
+            "messages": [
+                ToolMessage(
+                    content="Route recalculated.", tool_call_id=runtime.tool_call_id
+                )
+            ],
         }
     )
