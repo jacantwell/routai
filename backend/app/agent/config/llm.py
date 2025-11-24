@@ -5,7 +5,7 @@ from langchain_core.language_models import BaseChatModel
 
 DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
 DEFAULT_TEMPERATURE = 0.3
-DEFAULT_MAX_TOKENS = 1024
+DEFAULT_MAX_TOKENS = 8192
 DEFAULT_MAX_RETRIES = 2
 
 logger = logging.getLogger(__name__)
