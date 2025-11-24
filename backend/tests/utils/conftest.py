@@ -1,4 +1,5 @@
 import pytest
+
 from pydantic_extra_types.coordinate import Coordinate
 
 from app.models import Location
@@ -38,7 +39,6 @@ def mock_intermediate():
     return Location(
         name="Wetherby", coordinates=Coordinate(latitude=53.9277, longitude=-1.3850)    # type: ignore
     )
-
 
 @pytest.fixture
 def simple_polyline():

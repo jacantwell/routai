@@ -2,7 +2,7 @@ import operator
 from typing import Annotated, List, Optional
 
 from langchain_core.messages import BaseMessage
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from app.models import Location, Route, Segment
 
@@ -35,8 +35,7 @@ class AgentState(BaseModel):
     and accumulates information as the planning progresses.
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)  
 
     # Chat History - accumulated across all interactions
     messages: Annotated[List[BaseMessage], operator.add] = Field(
