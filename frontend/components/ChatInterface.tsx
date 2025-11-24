@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ArrowUp, Menu } from "lucide-react";
+import { ArrowUp, Route } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from "react-markdown";
 import { Spinner } from "@/components/ui/spinner";
+import { useSession } from "@/contexts/SessionContext";
+import { RouteModal } from "@/components/RouteModal";
 
 const TEXT_DISPLAY_DELAY = 30; // Delay in ms for text display
 
@@ -24,10 +26,12 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
+  const { sessionId, isLoading: sessionLoading, error: sessionError } = useSession();
+  const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: "Hello! I'm Jasper. How can I help you today?",
+      content: "Hello! I'm RoutAI. How can I help you plan your bikepacking adventure today?",
       role: "assistant",
       timestamp: new Date(),
     },
@@ -35,37 +39,13 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Create session on mount
-  useEffect(() => {
-    const createSession = async () => {
-      try {
-        const response = await fetch(`${API_URL}/sessions`, {
-          method: "POST",
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to create session");
-        }
-
-        const data = await response.json();
-        setSessionId(data.session_id);
-        console.log("Session created:", data.session_id);
-      } catch (error) {
-        console.error("Error creating session:", error);
-      }
-    };
-
-    createSession();
-  }, []);
-
   interface MessagePayload {
     content: string;
-    type: "ai" | "user"; // Assuming 'user' might exist based on 'ai'
+    type: "ai" | "user";
     session_id: string;
   }
 
@@ -76,14 +56,8 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
 
   function parseFastAPIResponse(responseString: string): MessagePayload | null {
     try {
-      // Remove the "data: " prefix
-      // We trim to handle potential accidental whitespace
       const cleanJson = responseString.replace("data: ", "").trim();
-
-      // Parse the string into a JSON object
       const parsedObj: ServerResponse = JSON.parse(cleanJson);
-
-      // Return just the inner data content you need
       return parsedObj.data;
     } catch (error) {
       console.error("Failed to parse response:", error);
@@ -99,29 +73,21 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
 
   useEffect(() => {
     if (textareaRef.current) {
-      // Reset height to auto to get the correct scrollHeight
       textareaRef.current.style.height = "auto";
-
-      // Calculate new height with a maximum limit
-      const maxHeight = 150; // Maximum height in pixels (approximately 5-6 lines)
+      const maxHeight = 150;
       const newHeight = Math.min(textareaRef.current.scrollHeight, maxHeight);
-
       textareaRef.current.style.height = newHeight + "px";
-
-      // Enable overflow scrolling if content exceeds max height
       textareaRef.current.style.overflowY =
         textareaRef.current.scrollHeight > maxHeight ? "auto" : "hidden";
     }
   }, [input]);
 
   const streamResponse = async (messageContent: string) => {
-    // Wait for session to be created
     if (!sessionId) {
       console.error("No session ID available");
       return;
     }
 
-    // Create assistant message placeholder
     const assistantMessageId = (Date.now() + 1).toString();
     const assistantMessage: Message = {
       id: assistantMessageId,
@@ -134,7 +100,6 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
     setIsWaitingForResponse(true);
 
     try {
-      // Create abort controller for this request
       abortControllerRef.current = new AbortController();
 
       const response = await fetch(`${API_URL}/chats/stream`, {
@@ -161,17 +126,14 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
       }
 
       let buffer = "";
-      let textQueue = ""; // Queue for text to be displayed
+      let textQueue = "";
       let isDisplaying = false;
-      let firstChunkReceived = false;
 
-      // Function to display queued text with delay
       const displayQueuedText = async () => {
         if (isDisplaying) return;
         isDisplaying = true;
 
         while (textQueue.length > 0) {
-          // Take 1-3 characters at a time for a natural feel
           const chunkSize = Math.min(
             Math.floor(Math.random() * 3) + 1,
             textQueue.length
@@ -198,7 +160,6 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
-          // Make sure all queued text is displayed before finishing
           while (textQueue.length > 0) {
             await new Promise((resolve) => setTimeout(resolve, 10));
           }
@@ -210,26 +171,20 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
         buffer = lines.pop() || "";
 
         for (const line of lines) {
-          // Trim whitespace
           const trimmedLine = line.trim();
 
-          // Skip empty lines
           if (!trimmedLine) {
             continue;
           }
 
-          // Parse SSE format: "data: {json}"
           if (trimmedLine.startsWith("data:")) {
             const dataStr = trimmedLine.slice(5).trim();
 
-            // Skip if no data after "data:"
             if (!dataStr) {
               continue;
             }
 
             try {
-              // Parse the SSE event
-              // console.log(dataStr)
               const eventData = parseFastAPIResponse(dataStr);
 
               if (!eventData) {
@@ -244,7 +199,6 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
             } catch (parseError) {
               console.error("Error parsing SSE data:", parseError);
               console.error("Problematic data:", dataStr);
-              // Continue processing other lines instead of breaking
             }
           }
         }
@@ -300,8 +254,41 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
     }
   };
 
+  // Show loading state while session is being created
+  if (sessionLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-white dark:bg-zinc-900">
+        <div className="text-center">
+          <Spinner className="mx-auto mb-4 h-8 w-8" />
+          <p className="text-muted-foreground">Initializing session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if session creation failed
+  if (sessionError) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-white dark:bg-zinc-900">
+        <div className="text-center">
+          <p className="text-destructive mb-2">Failed to create session</p>
+          <p className="text-sm text-muted-foreground">{sessionError}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen flex-col bg-white dark:bg-zinc-900">
+      {/* Route Modal */}
+      {sessionId && (
+        <RouteModal 
+          sessionId={sessionId}
+          isOpen={isRouteModalOpen}
+          onClose={() => setIsRouteModalOpen(false)}
+        />
+      )}
+
       {/* Messages Area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl px-4 py-8">
@@ -318,7 +305,7 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
                     RoutAI
                   </Badge>
                 ) : (
-                  <Badge className="bg-primary text-secondary-foreground font-bold border-2 border-black">
+                  <Badge className="bg-primary text-black font-bold border-2 border-black">
                     You
                   </Badge>
                 )}
@@ -344,11 +331,13 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
           <div className="relative flex items-center gap-2 px-4 py-2">
             <Button
               size="icon"
-              onClick={toggleSidebar}
+              onClick={() => setIsRouteModalOpen(true)}
               variant="secondary"
               className="shrink-0 border-2 border-black"
+              disabled={!sessionId}
+              title="View route on map"
             >
-              <Menu className="w-5 h-5" />
+              <Route className="w-5 h-5" />
             </Button>
             <Textarea
               ref={textareaRef}
@@ -357,7 +346,7 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
                 setInput(e.target.value)
               }
               onKeyDown={handleKeyPress}
-              placeholder="Ask me a question..."
+              placeholder="Ask me about planning your bikepacking route..."
               rows={1}
               className="px-4 py-2 w-full border-2 border-black shadow-md transition focus:outline-hidden focus:shadow-xs"
               disabled={!sessionId}

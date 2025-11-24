@@ -21,12 +21,18 @@ interface Accommodation {
 interface Route {
   polyline: string;
   origin: {
-    latitude: number;
-    longitude: number;
+    name: string;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
   };
   destination: {
-    latitude: number;
-    longitude: number;
+    name: string;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
   };
   distance: number;
   elevation_gain: number;
@@ -86,6 +92,8 @@ const RoutePlannerMap = ({ className, sessionId }: RoutePlannerMapProps) => {
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasInitialFit, setHasInitialFit] = useState(false);
+  const [userInteracted, setUserInteracted] = useState(false);
 
   // Effect to handle dark mode
   useEffect(() => {
@@ -237,13 +245,22 @@ const RoutePlannerMap = ({ className, sessionId }: RoutePlannerMapProps) => {
     }));
   }, [processedSegments]);
 
-  // Auto-fit bounds when segments load
+  // Auto-fit bounds when segments load (only once, unless user explicitly clicks fit button)
   useEffect(() => {
-    if (processedSegments.length > 0 && !loading) {
-      const timer = setTimeout(fitBounds, 300);
+    if (processedSegments.length > 0 && !loading && !hasInitialFit) {
+      const timer = setTimeout(() => {
+        fitBounds();
+        setHasInitialFit(true);
+      }, 300);
       return () => clearTimeout(timer);
     }
-  }, [processedSegments, loading, fitBounds]);
+  }, [processedSegments, loading, hasInitialFit, fitBounds]);
+
+  // Reset initial fit flag when sessionId changes
+  useEffect(() => {
+    setHasInitialFit(false);
+    setUserInteracted(false);
+  }, [sessionId]);
 
   // Map style based on dark/light mode
   const mapStyle = isDarkMode
@@ -253,7 +270,7 @@ const RoutePlannerMap = ({ className, sessionId }: RoutePlannerMapProps) => {
   return (
     <div className={`relative ${className || ""}`}>
       {/* Stats display */}
-      {totalStats && (
+      {/* {totalStats && (
         <div className="mb-6 rounded-lg bg-white p-4 shadow-sm dark:bg-slate-800">
           <h3 className="text-lg font-semibold mb-2">Route Overview</h3>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -289,7 +306,7 @@ const RoutePlannerMap = ({ className, sessionId }: RoutePlannerMapProps) => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Error display */}
       {error && (
@@ -301,7 +318,7 @@ const RoutePlannerMap = ({ className, sessionId }: RoutePlannerMapProps) => {
       )}
 
       {/* Map container */}
-      <div className="relative h-96 w-full overflow-hidden rounded-lg md:h-[600px]">
+      <div className="relative h-full w-full overflow-hidden rounded-lg">
         {/* Loading overlay */}
         {loading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 dark:bg-black/60">
@@ -332,12 +349,12 @@ const RoutePlannerMap = ({ className, sessionId }: RoutePlannerMapProps) => {
             </div>
           </div>
         )}
-
         <Map
           {...currentViewState}
-          onMove={(evt: ViewStateChangeEvent) =>
-            setCurrentViewState(evt.viewState)
-          }
+          onMove={(evt: ViewStateChangeEvent) => {
+            setCurrentViewState(evt.viewState);
+            setUserInteracted(true);
+          }}
           mapStyle={mapStyle}
           mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
           style={{ width: "100%", height: "100%" }}
@@ -393,66 +410,11 @@ const RoutePlannerMap = ({ className, sessionId }: RoutePlannerMapProps) => {
               </Source>
             );
           })}
-
-          {/* Start marker */}
-          {segments.length > 0 && (
-            <Marker
-              longitude={segments[0].route.origin.longitude}
-              latitude={segments[0].route.origin.latitude}
-              anchor="bottom"
-            >
-              <div className="flex flex-col items-center">
-                <div className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold border-2 border-white shadow-lg">
-                  S
-                </div>
-              </div>
-            </Marker>
-          )}
-
-          {/* End marker */}
-          {segments.length > 0 && (
-            <Marker
-              longitude={
-                segments[segments.length - 1].route.destination.longitude
-              }
-              latitude={
-                segments[segments.length - 1].route.destination.latitude
-              }
-              anchor="bottom"
-            >
-              <div className="flex flex-col items-center">
-                <div className="bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold border-2 border-white shadow-lg">
-                  E
-                </div>
-              </div>
-            </Marker>
-          )}
-
-          {/* Accommodation markers */}
-          {segments.map((segment) =>
-            segment.accommodation_options.slice(0, 3).map((acc, idx) => (
-              <Marker
-                key={`${segment.day}-${idx}`}
-                longitude={segment.route.destination.longitude}
-                latitude={segment.route.destination.latitude}
-                anchor="center"
-                offset={[idx * 8, idx * 8]}
-              >
-                <div
-                  className="h-3 w-3 cursor-pointer rounded-full border-2 border-white bg-blue-500 hover:h-4 hover:w-4 transition-all"
-                  onClick={() =>
-                    setSelectedAccommodation({ day: segment.day, accommodation: acc })
-                  }
-                  title={acc.name}
-                />
-              </Marker>
-            ))
-          )}
         </Map>
       </div>
 
       {/* Segment list */}
-      {segments.length > 0 && (
+      {/* {segments.length > 0 && (
         <div className="mt-6 space-y-3">
           <h3 className="text-lg font-semibold">Daily Segments</h3>
           {segments.map((segment) => (
@@ -478,75 +440,10 @@ const RoutePlannerMap = ({ className, sessionId }: RoutePlannerMapProps) => {
                   <span>{Math.round(segment.route.elevation_gain)} m ↑</span>
                 </div>
               </div>
-              {segment.accommodation_options.length > 0 ? (
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {segment.accommodation_options.length} accommodation{" "}
-                  {segment.accommodation_options.length === 1
-                    ? "option"
-                    : "options"}{" "}
-                  available
-                </div>
-              ) : (
-                <div className="text-sm text-amber-600 dark:text-amber-400">
-                  No accommodation found
-                </div>
-              )}
             </div>
           ))}
         </div>
-      )}
-
-      {/* Selected accommodation info */}
-      {selectedAccommodation && (
-        <div className="mt-4 rounded-lg bg-white p-4 shadow-md dark:bg-slate-800">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold">
-              Day {selectedAccommodation.day} Accommodation
-            </h3>
-            <button
-              onClick={() => setSelectedAccommodation(null)}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-          <div className="mt-2">
-            <p className="font-semibold">
-              {selectedAccommodation.accommodation.name}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {selectedAccommodation.accommodation.address}
-            </p>
-            {selectedAccommodation.accommodation.rating && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Rating: ⭐ {selectedAccommodation.accommodation.rating}
-              </p>
-            )}
-            <a
-              href={selectedAccommodation.accommodation.map_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline text-sm mt-2 inline-block"
-            >
-              View on Google Maps →
-            </a>
-          </div>
-        </div>
-      )}
+      )} */}
     </div>
   );
 };
