@@ -44,7 +44,7 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
   useEffect(() => {
     const createSession = async () => {
       try {
-        const response = await fetch(`${API_URL}/chat/sessions`, {
+        const response = await fetch(`${API_URL}/sessions`, {
           method: "POST",
         });
 
@@ -137,7 +137,7 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
       // Create abort controller for this request
       abortControllerRef.current = new AbortController();
 
-      const response = await fetch(`${API_URL}/chat/stream`, {
+      const response = await fetch(`${API_URL}/chats/stream`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
