@@ -63,3 +63,9 @@ class AgentState(BaseModel):
     user_confirmed: bool = Field(
         default=False, description="Whether user has confirmed the route overview"
     )
+
+    # True when reviewer asks question, False when user responds
+    awaiting_user_response: bool = False
+    
+    # True after first optimization pass
+    critical_optimization_done: bool = False
