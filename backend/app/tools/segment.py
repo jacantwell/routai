@@ -51,7 +51,7 @@ def get_segment_details(runtime: ToolRuntime, day_number: int) -> dict:
         "accommodation_count": len(segment.accommodation_options),
         "has_accommodation": len(segment.accommodation_options) > 0,
         "accommodation_options": [
-            {"name": acc.name, "rating": acc.rating, "address": acc.address}
+            acc.model_dump()
             for acc in segment.accommodation_options
         ],
     }
