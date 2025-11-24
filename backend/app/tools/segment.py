@@ -41,12 +41,12 @@ def get_segment_details(runtime: ToolRuntime, day_number: int) -> dict:
         "distance_km": round(segment.route.distance / 1000, 1),
         "elevation_gain_m": segment.route.elevation_gain,
         "origin": {
-            "latitude": segment.route.origin.latitude,
-            "longitude": segment.route.origin.longitude,
+            "latitude": segment.route.origin.coordinates.latitude,
+            "longitude": segment.route.origin.coordinates.longitude,
         },
         "destination": {
-            "latitude": segment.route.destination.latitude,
-            "longitude": segment.route.destination.longitude,
+            "latitude": segment.route.destination.coordinates.latitude,
+            "longitude": segment.route.destination.coordinates.longitude,
         },
         "accommodation_count": len(segment.accommodation_options),
         "has_accommodation": len(segment.accommodation_options) > 0,

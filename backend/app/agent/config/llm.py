@@ -3,7 +3,7 @@ from typing import List
 from langchain_anthropic import ChatAnthropic
 from langchain_core.language_models import BaseChatModel
 
-DEFAULT_MODEL = "claude-haiku-4-5-20251001"
+DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
 DEFAULT_TEMPERATURE = 0.3
 DEFAULT_MAX_TOKENS = 1024
 DEFAULT_MAX_RETRIES = 2

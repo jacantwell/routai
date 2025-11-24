@@ -100,6 +100,20 @@ def _build_optimization_request(state: AgentState) -> Any:
                         has_user_feedback = True
                         break
     
+    # Check if optimizer already made changes (to prevent infinite loops)
+    # Look for tool calls from optimizer in recent messages
+    optimizer_already_ran = False
+    if not has_user_feedback and len(state.messages) > 5:
+        # Check if we see optimizer tool calls in the message history
+        for msg in reversed(state.messages[-10:]):
+            if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                tool_names = [tc.get('name') for tc in msg.tool_calls]
+                # If we see route modification tools, optimizer already ran
+                if any(tool in tool_names for tool in ['adjust_daily_distance', 'search_accommodation', 'modify_waypoint']):
+                    optimizer_already_ran = True
+                    logger.info("Optimizer detected previous optimization attempt - will not optimize again")
+                    break
+    
     # Analyze accommodation availability
     days_without_accommodation = [
         seg.day for seg in segments 
@@ -124,14 +138,41 @@ def _build_optimization_request(state: AgentState) -> Any:
             f"4. If unclear: ask for clarification or make reasonable assumptions\n\n"
             f"Use get_route_summary first to understand the current state, then decide."
         )
-    else:
-        # Route looks good - ready for confirmation
+    elif optimizer_already_ran:
+        # Optimizer already made changes, don't optimize again
         request = (
-        f"If there are obvious issues (e.g., days missing accommodation):"
-        f"Use appropriate tools to investigate or fix the issues"
-        f"Do NOT call confirm_route at this stage. "
-        # f"After reviewing, provide the overview for the user to evaluate."
-    )
+            f"The route has already been optimized in a previous pass.\n\n"
+            f"Current route status:\n"
+            f"- {len(segments)} days, {requirements.daily_distance_km}km/day target\n"
+            f"- Days without accommodation: {days_without_accommodation if days_without_accommodation else 'None'}\n\n"
+            f"DO NOT call any tools. DO NOT make any more changes.\n"
+            f"The route is ready to be presented to the user for review.\n"
+            f"Simply acknowledge this and let the workflow proceed to the reviewer."
+        )
+    else:
+        # First optimization pass - check for obvious issues
+        request = (
+            f"This is the first optimization pass. The route has been calculated and accommodation searched.\n\n"
+            f"Current route status:\n"
+            f"- {len(segments)} days, {requirements.daily_distance_km}km/day target\n"
+            f"- Days without accommodation: {days_without_accommodation if days_without_accommodation else 'None'}\n\n"
+            f"Your task: Determine if any CRITICAL optimization is needed BEFORE showing the route to the user.\n\n"
+            f"CRITICAL issues that require action:\n"
+            f"- Days completely missing accommodation → Use search_accommodation tool\n"
+            f"- Extremely dangerous daily distances (>150km or <20km) → Use adjust_daily_distance\n\n"
+            f"NON-CRITICAL issues (do NOT fix these automatically):\n"
+            f"- Daily distances slightly off target (within ±20km)\n"
+            f"- Route could be slightly more optimized\n"
+            f"- Minor accommodation preferences\n\n"
+            f"IMPORTANT RULES:\n"
+            f"1. Only call tools if there's a CRITICAL issue that must be fixed\n"
+            f"2. Once you call a tool, check the result ONCE and stop\n"
+            f"3. DO NOT repeatedly call get_route_summary or get_segment_details\n"
+            f"4. DO NOT repeatedly adjust the same parameter\n"
+            f"5. If no critical issues OR if you already made one optimization → Call NO tools\n"
+            f"6. The route will proceed to review where the user can request further changes\n\n"
+            f"Most routes are fine as-is. Trust the initial calculation unless there's a critical problem."
+        )
     
     logger.info(f"Optimization mode: {'user_feedback' if has_user_feedback else 'initial_check'}")
     

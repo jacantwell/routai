@@ -24,6 +24,8 @@ async def chat_stream(session_manager: SessionManagerDep, request: ChatRequest) 
     Returns:
         StreamingResponse with SSE events
     """
+
+    print("herer")
     # Create or get session
     session_id = request.session_id
     if not session_id:
