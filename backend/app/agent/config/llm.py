@@ -18,18 +18,18 @@ def create_llm(
     max_retries: int = DEFAULT_MAX_RETRIES,
 ) -> BaseChatModel:
     """Create and configure the LLM instance.
-    
+
     Args:
         model_name: The Claude model to use
         temperature: Sampling temperature (0-1)
         max_tokens: Maximum tokens in response
         max_retries: Number of retry attempts on failure
-        
+
     Returns:
         Configured ChatAnthropic instance
     """
     logger.info(f"Initializing LLM with model: {model_name}")
-    
+
     return ChatAnthropic(
         model_name=model_name,
         temperature=temperature,
@@ -46,12 +46,12 @@ def create_llm_with_tools(
     temperature: float = DEFAULT_TEMPERATURE,
 ) -> BaseChatModel:
     """Create an LLM instance bound with specific tools.
-    
+
     Args:
         tools: List of tools/schemas to bind to the LLM
         model_name: The Claude model to use
         temperature: Sampling temperature
-        
+
     Returns:
         LLM instance with tools bound
     """
@@ -59,6 +59,6 @@ def create_llm_with_tools(
         model_name=model_name,
         temperature=temperature,
     )
-    
+
     logger.info(f"Binding {len(tools)} tools to LLM")
-    return llm.bind_tools(tools)    # type: ignore
+    return llm.bind_tools(tools)  # type: ignore

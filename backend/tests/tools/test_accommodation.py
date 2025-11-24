@@ -11,9 +11,7 @@ from app.models import Accommodation
 
 @patch("app.tools.accommodation.get_accommodation")
 @patch("app.tools.accommodation.geocode_location")
-def test_find_accommodation_at_location_success(
-    mock_geocode, mock_get_accommodation
-):
+def test_find_accommodation_at_location_success(mock_geocode, mock_get_accommodation):
     """Test successful accommodation search at location"""
     mock_geocode.return_value = Coordinate(latitude=48.8566, longitude=2.3522)
     mock_get_accommodation.return_value = [
@@ -117,9 +115,7 @@ def test_search_accommodation_for_day_success(
     assert len(result) == 1
     assert result[0].name == "Day 1 Hotel"
     mock_validate_segments.assert_called_once_with(mock_runtime_with_segments)
-    mock_get_accommodation.assert_called_once_with(
-        segment.route.destination, radius=10
-    )
+    mock_get_accommodation.assert_called_once_with(segment.route.destination, radius=10)
 
 
 @patch("app.tools.accommodation.get_accommodation")
@@ -137,9 +133,7 @@ def test_search_accommodation_for_day_custom_radius(
     )
 
     assert result == []
-    mock_get_accommodation.assert_called_once_with(
-        segment.route.destination, radius=15
-    )
+    mock_get_accommodation.assert_called_once_with(segment.route.destination, radius=15)
 
 
 @patch("app.tools.accommodation.validate_segments_state")

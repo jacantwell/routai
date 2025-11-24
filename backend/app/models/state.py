@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from app.models import Location, Route, Segment
 
+
 class RouteRequirements(BaseModel):
     """Requirements for route calculation.
 
@@ -35,7 +36,7 @@ class AgentState(BaseModel):
     and accumulates information as the planning progresses.
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)  
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Chat History - accumulated across all interactions
     messages: Annotated[List[BaseMessage], operator.add] = Field(
@@ -65,6 +66,6 @@ class AgentState(BaseModel):
 
     # True when reviewer asks question, False when user responds
     awaiting_user_response: bool = False
-    
+
     # True after first optimization pass
     critical_optimization_done: bool = False

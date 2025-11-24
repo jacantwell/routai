@@ -27,14 +27,14 @@ async def lifespan(app: FastAPI):
 
     # Global session manager instance
     app.state.session_manager = SessionManager()
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down API")
 
-app = FastAPI(lifespan=lifespan
-)
+
+app = FastAPI(lifespan=lifespan)
 
 # Set all CORS enabled origins
 if settings.CORS_ORGINS:
@@ -83,11 +83,12 @@ async def log_requests(request: Request, call_next):
     logger.info(f"Response status: {response.status_code}")
     return response
 
+
 @app.get("/ping")
 def ping():
     return "pong"
 
+
 # Include routers
 app.include_router(chat_router, tags=["chats"])
 app.include_router(session_router, tags=["sessions"])
-

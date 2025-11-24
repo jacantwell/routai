@@ -101,9 +101,7 @@ def test_adjust_daily_distance_success(
 
 
 @patch("app.tools.route.validate_route_state")
-def test_adjust_daily_distance_too_low(
-    mock_validate_route, mock_runtime_with_segments
-):
+def test_adjust_daily_distance_too_low(mock_validate_route, mock_runtime_with_segments):
     """Test error when daily distance is too low"""
     route = mock_runtime_with_segments.state.route
     requirements = mock_runtime_with_segments.state.requirements

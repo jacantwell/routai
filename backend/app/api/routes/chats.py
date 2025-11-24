@@ -11,16 +11,19 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chats")
 
+
 @router.post("/stream")
-async def chat_stream(session_manager: SessionManagerDep, request: ChatRequest) -> EventSourceResponse:
+async def chat_stream(
+    session_manager: SessionManagerDep, request: ChatRequest
+) -> EventSourceResponse:
     """Stream chat responses using Server-Sent Events.
-    
+
     This endpoint streams the conversation in real-time using SSE.
     The client will receive events as the AI processes the request.
-    
+
     Args:
         request: ChatRequest with message and optional session_id
-        
+
     Returns:
         StreamingResponse with SSE events
     """
@@ -34,13 +37,10 @@ async def chat_stream(session_manager: SessionManagerDep, request: ChatRequest) 
     else:
         if not session_manager.session_exists(session_id):
             raise HTTPException(
-                status_code=404,
-                detail=f"Session {session_id} not found"
+                status_code=404, detail=f"Session {session_id} not found"
             )
-    
+
     logger.info(f"Starting chat stream for session {session_id}")
-    
+
     # Return SSE stream
-    return EventSourceResponse(
-        stream_chat_response(request.message, session_id)
-    )
+    return EventSourceResponse(stream_chat_response(request.message, session_id))

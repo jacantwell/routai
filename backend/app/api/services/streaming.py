@@ -76,10 +76,7 @@ async def stream_chat_response(
             if state_data:
                 state_event = {
                     "event": "state_update",
-                    "data": {
-                        **state_data,
-                        "session_id": session_id
-                    }
+                    "data": {**state_data, "session_id": session_id},
                 }
                 yield f"data: {json.dumps(state_event)}\n\n"
 

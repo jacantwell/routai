@@ -93,7 +93,9 @@ def calculate_segments_node(state: AgentState) -> Dict[str, Any]:
     )
 
     try:
-        segments: List[Segment] = calculate_segments(route.polyline, daily_distance_m, route.origin, route.destination)
+        segments: List[Segment] = calculate_segments(
+            route.polyline, daily_distance_m, route.origin, route.destination
+        )
 
         logger.info(f"Generated {len(segments)} segments")
 

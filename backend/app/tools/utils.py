@@ -136,7 +136,9 @@ def recalculate_segments_with_accommodation(
     logger.info(f"Calculating segments with {daily_distance_km}km daily distance")
 
     # Calculate segments based on daily distance
-    segments = calculate_segments(route.polyline, daily_distance_km * 1000, route.origin, route.destination)
+    segments = calculate_segments(
+        route.polyline, daily_distance_km * 1000, route.origin, route.destination
+    )
 
     # Find accommodation for each segment endpoint
     for segment in segments:
