@@ -7,12 +7,10 @@ from app.utils.utils import get_accommodation
 
 @patch("app.utils.utils.requests.post")
 @patch("app.utils.utils.settings")
-def test_get_accommodation_success(mock_settings, mock_post, mock_location):
+def test_get_accommodation_success(mock_settings, mock_post, mock_coordinate):
     """Test successful accommodation search"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_PLACES_API_ENDPOINT = (
-        "https://places.googleapis.com/v1/places:searchNearby"
-    )
+    mock_settings.GOOGLE_PLACES_API_ENDPOINT = "https://places.googleapis.com/v1/places:searchNearby"
 
     mock_response = Mock()
     mock_response.json.return_value = {
@@ -34,7 +32,7 @@ def test_get_accommodation_success(mock_settings, mock_post, mock_location):
     mock_response.raise_for_status = Mock()
     mock_post.return_value = mock_response
 
-    result = get_accommodation(mock_location, radius=5)
+    result = get_accommodation(mock_coordinate, radius=5)
 
     assert len(result) == 2
     assert result[0].name == "Test Hotel"
@@ -46,19 +44,17 @@ def test_get_accommodation_success(mock_settings, mock_post, mock_location):
 
 @patch("app.utils.utils.requests.post")
 @patch("app.utils.utils.settings")
-def test_get_accommodation_with_custom_radius(mock_settings, mock_post, mock_location):
+def test_get_accommodation_with_custom_radius(mock_settings, mock_post, mock_coordinate):
     """Test accommodation search with custom radius"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_PLACES_API_ENDPOINT = (
-        "https://places.googleapis.com/v1/places:searchNearby"
-    )
+    mock_settings.GOOGLE_PLACES_API_ENDPOINT = "https://places.googleapis.com/v1/places:searchNearby"
 
     mock_response = Mock()
     mock_response.json.return_value = {"places": []}
     mock_response.raise_for_status = Mock()
     mock_post.return_value = mock_response
 
-    get_accommodation(mock_location, radius=10)
+    get_accommodation(mock_coordinate, radius=10)
 
     request_body = mock_post.call_args[1]["json"]
     assert request_body["locationRestriction"]["circle"]["radius"] == 10000
@@ -66,31 +62,29 @@ def test_get_accommodation_with_custom_radius(mock_settings, mock_post, mock_loc
 
 @patch("app.utils.utils.requests.post")
 @patch("app.utils.utils.settings")
-def test_get_accommodation_empty_results(mock_settings, mock_post, mock_location):
+def test_get_accommodation_empty_results(mock_settings, mock_post, mock_coordinate):
     """Test handling of empty results"""
+
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_PLACES_API_ENDPOINT = (
-        "https://places.googleapis.com/v1/places:searchNearby"
-    )
+    mock_settings.GOOGLE_PLACES_API_ENDPOINT = "https://places.googleapis.com/v1/places:searchNearby"
 
     mock_response = Mock()
     mock_response.json.return_value = {"places": []}
     mock_response.raise_for_status = Mock()
     mock_post.return_value = mock_response
 
-    result = get_accommodation(mock_location)
+    result = get_accommodation(mock_coordinate)
 
     assert result == []
 
 
 @patch("app.utils.utils.requests.post")
 @patch("app.utils.utils.settings")
-def test_get_accommodation_all_fields_present(mock_settings, mock_post, mock_location):
+def test_get_accommodation_all_fields_present(mock_settings, mock_post, mock_coordinate):
     """Test handling when all optional fields are present"""
+
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_PLACES_API_ENDPOINT = (
-        "https://places.googleapis.com/v1/places:searchNearby"
-    )
+    mock_settings.GOOGLE_PLACES_API_ENDPOINT = "https://places.googleapis.com/v1/places:searchNearby"
 
     mock_response = Mock()
     mock_response.json.return_value = {
@@ -106,7 +100,7 @@ def test_get_accommodation_all_fields_present(mock_settings, mock_post, mock_loc
     mock_response.raise_for_status = Mock()
     mock_post.return_value = mock_response
 
-    result = get_accommodation(mock_location)
+    result = get_accommodation(mock_coordinate)
 
     assert len(result) == 1
     assert result[0].name == "Complete Hotel"
@@ -117,33 +111,31 @@ def test_get_accommodation_all_fields_present(mock_settings, mock_post, mock_loc
 
 @patch("app.utils.utils.requests.post")
 @patch("app.utils.utils.settings")
-def test_get_accommodation_request_exception(mock_settings, mock_post, mock_location):
+def test_get_accommodation_request_exception(mock_settings, mock_post, mock_coordinate):
     """Test handling of request exceptions"""
+    
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_PLACES_API_ENDPOINT = (
-        "https://places.googleapis.com/v1/places:searchNearby"
-    )
-
+    mock_settings.GOOGLE_PLACES_API_ENDPOINT = "https://places.googleapis.com/v1/places:searchNearby"
+    
     mock_post.side_effect = requests.exceptions.RequestException("Network error")
 
     with pytest.raises(Exception) as exc_info:
-        get_accommodation(mock_location)
+        get_accommodation(mock_coordinate)
 
     assert "Error making request to Google Places API" in str(exc_info.value)
 
 
 @patch("app.utils.utils.requests.post")
 @patch("app.utils.utils.settings")
-def test_get_accommodation_generic_error(mock_settings, mock_post, mock_location):
+def test_get_accommodation_generic_error(mock_settings, mock_post, mock_coordinate):
     """Test handling of base errors"""
+
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_PLACES_API_ENDPOINT = (
-        "https://places.googleapis.com/v1/places:searchNearby"
-    )
+    mock_settings.GOOGLE_PLACES_API_ENDPOINT ="https://places.googleapis.com/v1/places:searchNearby"
 
     mock_response = Mock()
     mock_response.raise_for_status.side_effect = Exception("401 Unauthorized")
     mock_post.return_value = mock_response
 
     with pytest.raises(Exception) as exc_info:
-        get_accommodation(mock_location)
+        get_accommodation(mock_coordinate)

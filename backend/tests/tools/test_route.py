@@ -11,7 +11,6 @@ from app.tools.route import (
     remove_intermediate_waypoint,
     recalculate_complete_route,
 )
-from app.models import Location
 
 
 def test_confirm_route_success(mock_runtime):
@@ -22,15 +21,6 @@ def test_confirm_route_success(mock_runtime):
     assert result.update["user_confirmed"] is True
     assert len(result.update["messages"]) == 1
     assert "Route confirmed" in result.update["messages"][0].content
-
-
-def test_confirm_route_returns_command(mock_runtime):
-    """Test that confirm_route returns a Command object"""
-    result = confirm_route.func(runtime=mock_runtime)
-
-    assert isinstance(result, Command)
-    assert "user_confirmed" in result.update
-    assert "messages" in result.update
 
 
 @patch("app.tools.route.validate_segments_state")
