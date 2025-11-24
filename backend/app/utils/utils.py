@@ -3,13 +3,13 @@ import random
 
 import polyline
 import requests
+
 from app.config import settings
 from app.models import Accommodation, Route, Segment, Location
 from geopy.distance import geodesic
 from pydantic_extra_types.coordinate import Coordinate
 
 logger = logging.getLogger(__name__)
-
 
 
 def get_elevation_gain(polyline: str) -> int:
@@ -22,21 +22,21 @@ def get_elevation_gain(polyline: str) -> int:
         elevation: Total elevation gain in meters
     """
     # Mock data
-    return random.randint(200, 2000)
+    return random.randint(100, 400)
 
 
 def reverse_geocode(coordinates: Coordinate) -> str:
     """Convert coordinates to a place name using Google Geocoding API.
-    
+
     This uses reverse geocoding to find the most appropriate place name
     for the given coordinates, preferring locality or administrative area names.
-    
+
     Args:
         coordinates: The coordinates to reverse geocode
-        
+
     Returns:
         str: The place name (e.g., "Leeds, UK" or "Lyon, France")
-        
+
     Raises:
         ValueError: If reverse geocoding fails
     """
@@ -44,13 +44,13 @@ def reverse_geocode(coordinates: Coordinate) -> str:
         "latlng": f"{coordinates.latitude},{coordinates.longitude}",
         "key": settings.GOOGLE_API_KEY,
     }
-    
+
     try:
         response = requests.get(settings.GOOGLE_GEOCODING_API_ENDPOINT, params=params)
         response.raise_for_status()
-        
+
         data = response.json()
-        
+
         if data["status"] != "OK" or not data.get("results"):
             logger.warning(
                 f"Could not reverse geocode coordinates {coordinates.latitude},{coordinates.longitude}. "
@@ -58,32 +58,32 @@ def reverse_geocode(coordinates: Coordinate) -> str:
             )
             # Fallback to coordinate string
             return f"Location at {coordinates.latitude:.4f},{coordinates.longitude:.4f}"
-        
+
         # Try to find the most relevant place name from the results
         # Priority: locality > administrative_area_level_2 > administrative_area_level_1 > first result
         results = data["results"]
-        
+
         # Look for a result with a locality (city/town)
         for result in results:
             types = result.get("types", [])
             if "locality" in types or "postal_town" in types:
                 return result["formatted_address"]
-        
+
         # Look for administrative area level 2 (county/district)
         for result in results:
             types = result.get("types", [])
             if "administrative_area_level_2" in types:
                 return result["formatted_address"]
-        
+
         # Look for administrative area level 1 (state/region)
         for result in results:
             types = result.get("types", [])
             if "administrative_area_level_1" in types:
                 return result["formatted_address"]
-        
+
         # Fall back to first result's formatted address
         return results[0]["formatted_address"]
-        
+
     except requests.RequestException as e:
         logger.error(f"Failed to reverse geocode coordinates: {str(e)}")
         # Fallback to coordinate string
@@ -277,10 +277,10 @@ def calculate_segments(
     This function divides a route into daily segments by identifying points along
     the route that are approximately daily_distance apart. Each segment represents
     a day's cycling with its own route polyline, origin, and destination.
-    
+
     Segment endpoint names are determined by:
     - First segment origin: Uses the route origin name
-    - Last segment destination: Uses the route destination name  
+    - Last segment destination: Uses the route destination name
     - Intermediate endpoints: Uses reverse geocoding to find the nearest place name
 
     Args:
@@ -411,5 +411,5 @@ def calculate_segments(
             segments[i + 1].route.origin = segments[i].route.destination
 
     logger.info(f"Generated {len(segments)} segments with reverse-geocoded place names")
-    
+
     return segments
