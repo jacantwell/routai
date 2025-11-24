@@ -29,7 +29,6 @@ def planner_node(state: AgentState) -> Dict[str, Any]:
         Dictionary with new messages to add to state
     """
     logger.info("Planner node: Processing user request")
-    logger.info(f"Message history: {state.messages}")
 
     response = _llm_with_tools.invoke(state.messages, system=PLANNER_SYSTEM_PROMPT)
 
@@ -92,4 +91,4 @@ def parse_requirements_node(state: AgentState) -> Dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Failed to validate requirements: {str(e)}")
-        raise ValueError(f"Invalid route requirements: {str(e)}") from e
+        raise ValueError(f"Invalid route requirements: {str(e)}")

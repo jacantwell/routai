@@ -46,7 +46,7 @@ For INITIAL OPTIMIZATION:
 - Check if any days are missing accommodation -> use search_accommodation
 - Check if any distances are dangerous (>150km or <20km) -> use adjust_daily_distance
 - Call ONE tool if needed, then stop
-- If no critical issues then dont respond
+- If no critical issues respond with "Route created, generating summary..."
 
 For USER REQUEST:
 - The user's last message describes what they want
