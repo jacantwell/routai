@@ -6,10 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
-from app.api.routes.chat import router as chat_router
-from app.api.routes.route import router as route_router
+from app.api.routes.chats import router as chat_router
+from app.api.routes.sessions import router as session_router
 from app.config.logging import setup_logging
-from app.api.services.session_manager import session_manager
+from app.api.services.session_manager import SessionManager
 
 from app.config import settings, setup_logging
 
@@ -24,14 +24,16 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting up Bikepacking Route Planner API")
     logger.info("Session manager initialized")
+
+    # Global session manager instance
+    app.state.session_manager = SessionManager()
     
     yield
     
     # Shutdown
     logger.info("Shutting down API")
-    logger.info(f"Final stats: {session_manager.get_stats()}")
 
-app = FastAPI(
+app = FastAPI(lifespan=lifespan
 )
 
 # Set all CORS enabled origins
@@ -87,5 +89,5 @@ def ping():
 
 # Include routers
 app.include_router(chat_router, tags=["chats"])
-app.include_router(route_router, tags=["routes"])
+app.include_router(session_router, tags=["sessions"])
 

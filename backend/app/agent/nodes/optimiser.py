@@ -130,7 +130,7 @@ def _build_optimization_request(state: AgentState) -> Any:
         f"This is the first optimisation pass. Review the route using "
         f"get_route_summary and identify any issues (e.g., missing accommodation). "
         f"Do NOT call confirm_route at this stage. "
-        f"After reviewing, provide the overview for the user to evaluate."
+        # f"After reviewing, provide the overview for the user to evaluate."
     )
     
     logger.info(f"Optimization mode: {'user_feedback' if has_user_feedback else 'initial_check'}")
