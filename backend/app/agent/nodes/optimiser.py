@@ -127,8 +127,8 @@ def _build_optimization_request(state: AgentState) -> Any:
     else:
         # Route looks good - ready for confirmation
         request = (
-        f"This is the first optimisation pass. Review the route using "
-        f"get_route_summary and identify any issues (e.g., missing accommodation). "
+        f"If there are obvious issues (e.g., days missing accommodation):"
+        f"Use appropriate tools to investigate or fix the issues"
         f"Do NOT call confirm_route at this stage. "
         # f"After reviewing, provide the overview for the user to evaluate."
     )

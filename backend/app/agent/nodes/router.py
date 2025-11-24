@@ -39,14 +39,11 @@ def calculate_route_node(state: AgentState) -> Dict[str, Any]:
         intermediate_names = [loc.name for loc in requirements.intermediates]
         logger.info(f"Intermediate stops: {', '.join(intermediate_names)}")
 
-    # Extract coordinates for API call
-    intermediate_coords = [point.coordinates for point in requirements.intermediates]
-
     try:
         route = fetch_route(
-            origin=requirements.origin.coordinates,
-            destination=requirements.destination.coordinates,
-            intermediates=intermediate_coords,
+            origin=requirements.origin,
+            destination=requirements.destination,
+            intermediates=requirements.intermediates,
         )
 
         logger.info(f"Route calculated successfully: {route.distance / 1000:.2f} km")
@@ -96,7 +93,7 @@ def calculate_segments_node(state: AgentState) -> Dict[str, Any]:
     )
 
     try:
-        segments: List[Segment] = calculate_segments(route.polyline, daily_distance_m)
+        segments: List[Segment] = calculate_segments(route.polyline, daily_distance_m, route.origin, route.destination)
 
         logger.info(f"Generated {len(segments)} segments")
 

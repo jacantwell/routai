@@ -1,11 +1,14 @@
+import logging
 import random
 
 import polyline
 import requests
 from app.config import settings
-from app.models import Accommodation, Route, Segment
+from app.models import Accommodation, Route, Segment, Location
 from geopy.distance import geodesic
 from pydantic_extra_types.coordinate import Coordinate
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -20,6 +23,71 @@ def get_elevation_gain(polyline: str) -> int:
     """
     # Mock data
     return random.randint(200, 2000)
+
+
+def reverse_geocode(coordinates: Coordinate) -> str:
+    """Convert coordinates to a place name using Google Geocoding API.
+    
+    This uses reverse geocoding to find the most appropriate place name
+    for the given coordinates, preferring locality or administrative area names.
+    
+    Args:
+        coordinates: The coordinates to reverse geocode
+        
+    Returns:
+        str: The place name (e.g., "Leeds, UK" or "Lyon, France")
+        
+    Raises:
+        ValueError: If reverse geocoding fails
+    """
+    params = {
+        "latlng": f"{coordinates.latitude},{coordinates.longitude}",
+        "key": settings.GOOGLE_API_KEY,
+    }
+    
+    try:
+        response = requests.get(settings.GOOGLE_GEOCODING_API_ENDPOINT, params=params)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if data["status"] != "OK" or not data.get("results"):
+            logger.warning(
+                f"Could not reverse geocode coordinates {coordinates.latitude},{coordinates.longitude}. "
+                f"Status: {data['status']}"
+            )
+            # Fallback to coordinate string
+            return f"Location at {coordinates.latitude:.4f},{coordinates.longitude:.4f}"
+        
+        # Try to find the most relevant place name from the results
+        # Priority: locality > administrative_area_level_2 > administrative_area_level_1 > first result
+        results = data["results"]
+        
+        # Look for a result with a locality (city/town)
+        for result in results:
+            types = result.get("types", [])
+            if "locality" in types or "postal_town" in types:
+                return result["formatted_address"]
+        
+        # Look for administrative area level 2 (county/district)
+        for result in results:
+            types = result.get("types", [])
+            if "administrative_area_level_2" in types:
+                return result["formatted_address"]
+        
+        # Look for administrative area level 1 (state/region)
+        for result in results:
+            types = result.get("types", [])
+            if "administrative_area_level_1" in types:
+                return result["formatted_address"]
+        
+        # Fall back to first result's formatted address
+        return results[0]["formatted_address"]
+        
+    except requests.RequestException as e:
+        logger.error(f"Failed to reverse geocode coordinates: {str(e)}")
+        # Fallback to coordinate string
+        return f"Location at {coordinates.latitude:.4f},{coordinates.longitude:.4f}"
 
 
 def get_accommodation(location: Coordinate, radius: int = 5) -> list[Accommodation]:
@@ -84,19 +152,19 @@ def get_accommodation(location: Coordinate, radius: int = 5) -> list[Accommodati
 
 
 def fetch_route(
-    origin: Coordinate,
-    destination: Coordinate,
-    intermediates: list[Coordinate] = [],
+    origin: Location,
+    destination: Location,
+    intermediates: list[Location] = [],
 ) -> Route:
     """Calculate a route between 2 points using Google Routes API.
 
     Args:
-        origin: The starting location
-        destination: The final location
-        intermediates: A list of intermediate points the route must pass through in ascending order.
+        origin: The starting location (with name and coordinates)
+        destination: The final location (with name and coordinates)
+        intermediates: A list of intermediate locations the route must pass through in ascending order.
 
     Returns:
-        Route: Route object containing polyline, distance in meters, and duration
+        Route: Route object containing polyline, origin, destination, distance in meters, and elevation gain
 
     Raises:
         ValueError: If route calculation fails
@@ -114,12 +182,15 @@ def fetch_route(
     ]
 
     intermediates_request = []
-    for ip in intermediates:
+    for loc in intermediates:
         intermediates_request.append(
             {
                 "via": True,
                 "location": {
-                    "latLng": {"latitude": ip.latitude, "longitude": ip.longitude}
+                    "latLng": {
+                        "latitude": loc.coordinates.latitude,
+                        "longitude": loc.coordinates.longitude,
+                    }
                 },
             }
         )
@@ -127,14 +198,17 @@ def fetch_route(
     base_request = {
         "origin": {
             "location": {
-                "latLng": {"latitude": origin.latitude, "longitude": origin.longitude}
+                "latLng": {
+                    "latitude": origin.coordinates.latitude,
+                    "longitude": origin.coordinates.longitude,
+                }
             }
         },
         "destination": {
             "location": {
                 "latLng": {
-                    "latitude": destination.latitude,
-                    "longitude": destination.longitude,
+                    "latitude": destination.coordinates.latitude,
+                    "longitude": destination.coordinates.longitude,
                 }
             }
         },
@@ -171,14 +245,14 @@ def fetch_route(
                 continue
 
             route_data = data["routes"][0]
-            polyline = route_data["polyline"]["encodedPolyline"]
+            route_polyline = route_data["polyline"]["encodedPolyline"]
 
             return Route(
-                polyline=polyline,
+                polyline=route_polyline,
                 origin=origin,
                 destination=destination,
                 distance=route_data["distanceMeters"],
-                elevation_gain=get_elevation_gain(polyline),
+                elevation_gain=get_elevation_gain(route_polyline),
             )
 
         except Exception as e:
@@ -191,18 +265,29 @@ def fetch_route(
     )
 
 
-def calculate_segments(route_polyline: str, daily_distance: int) -> list[Segment]:
+def calculate_segments(
+    route_polyline: str,
+    daily_distance: int,
+    route_origin: Location,
+    route_destination: Location,
+) -> list[Segment]:
     """
     Generate route segments based on daily cycling distance.
 
     This function divides a route into daily segments by identifying points along
     the route that are approximately daily_distance apart. Each segment represents
     a day's cycling with its own route polyline, origin, and destination.
+    
+    Segment endpoint names are determined by:
+    - First segment origin: Uses the route origin name
+    - Last segment destination: Uses the route destination name  
+    - Intermediate endpoints: Uses reverse geocoding to find the nearest place name
 
     Args:
         route_polyline: Encoded polyline string from Google Routes API
         daily_distance: Target distance per day in meters
-        total_distance: Total route distance in meters
+        route_origin: Origin location of the overall route (used for first segment)
+        route_destination: Destination location of the overall route (used for last segment)
 
     Returns:
         List of segments with route details for each day
@@ -237,16 +322,38 @@ def calculate_segments(route_polyline: str, daily_distance: int) -> list[Segment
             segment_coords = coordinates[segment_start_idx : i + 2]
             segment_polyline = polyline.encode(segment_coords)
 
-            route = Route(
-                polyline=segment_polyline,
-                origin=Coordinate(
+            # Determine origin location for this segment
+            if segment_start_idx == 0:
+                # First segment uses the route origin
+                segment_origin = route_origin
+            else:
+                # Intermediate segments: reverse geocode to get place name
+                origin_coord = Coordinate(
                     latitude=coordinates[segment_start_idx][0],  # type: ignore
                     longitude=coordinates[segment_start_idx][1],  # type: ignore
-                ),
-                destination=Coordinate(
-                    latitude=point2[0],  # type: ignore
-                    longitude=point2[1],  # type: ignore
-                ),
+                )
+                origin_name = reverse_geocode(origin_coord)
+                segment_origin = Location(
+                    name=origin_name,
+                    coordinates=origin_coord,
+                )
+
+            # Determine destination location for this segment
+            # Use reverse geocoding to get the place name
+            dest_coord = Coordinate(
+                latitude=point2[0],  # type: ignore
+                longitude=point2[1],  # type: ignore
+            )
+            dest_name = reverse_geocode(dest_coord)
+            segment_destination = Location(
+                name=dest_name,
+                coordinates=dest_coord,
+            )
+
+            route = Route(
+                polyline=segment_polyline,
+                origin=segment_origin,
+                destination=segment_destination,
                 distance=int(segment_distance * 1000),  # convert to meters
                 elevation_gain=get_elevation_gain(segment_polyline),
             )
@@ -266,16 +373,29 @@ def calculate_segments(route_polyline: str, daily_distance: int) -> list[Segment
         segment_coords = coordinates[segment_start_idx:]
         segment_polyline = polyline.encode(segment_coords)
 
-        route = Route(
-            polyline=segment_polyline,
-            origin=Coordinate(
+        # Determine origin for final segment
+        if segment_start_idx == 0:
+            # Only one segment - use route origin
+            segment_origin = route_origin
+        else:
+            # Multiple segments - reverse geocode the starting point
+            origin_coord = Coordinate(
                 latitude=coordinates[segment_start_idx][0],  # type: ignore
                 longitude=coordinates[segment_start_idx][1],  # type: ignore
-            ),
-            destination=Coordinate(
-                latitude=coordinates[-1][0],  # type: ignore
-                longitude=coordinates[-1][1],  # type: ignore
-            ),
+            )
+            origin_name = reverse_geocode(origin_coord)
+            segment_origin = Location(
+                name=origin_name,
+                coordinates=origin_coord,
+            )
+
+        # Final segment always uses the route destination
+        segment_destination = route_destination
+
+        route = Route(
+            polyline=segment_polyline,
+            origin=segment_origin,
+            destination=segment_destination,
             distance=int(segment_distance * 1000),  # convert to meters
             elevation_gain=get_elevation_gain(segment_polyline),
         )
@@ -284,4 +404,12 @@ def calculate_segments(route_polyline: str, daily_distance: int) -> list[Segment
 
         segments.append(segment)
 
+    # Update intermediate segments so each segment's origin matches the previous segment's destination
+    if len(segments) > 1:
+        for i in range(len(segments) - 1):
+            # Make the next segment's origin use the same Location object as this segment's destination
+            segments[i + 1].route.origin = segments[i].route.destination
+
+    logger.info(f"Generated {len(segments)} segments with reverse-geocoded place names")
+    
     return segments

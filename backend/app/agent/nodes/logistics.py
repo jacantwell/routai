@@ -29,7 +29,7 @@ def find_accommodation_node(state: AgentState) -> Dict[str, Any]:
 
     for sm in segments:
         # Searching for accommodation for the end of each day
-        accommodation_opts = get_accommodation(sm.route.destination)    
+        accommodation_opts = get_accommodation(sm.route.destination.coordinates)    
         sm.accommodation_options += accommodation_opts
         if len(sm.accommodation_options) == 0:
             days_with_no_accommodation.append(sm.day)

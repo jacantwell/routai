@@ -18,8 +18,8 @@ class Accommodation(BaseModel):
 
 class Route(BaseModel):
     polyline: str
-    origin: Coordinate
-    destination: Coordinate
+    origin: Location
+    destination: Location
     distance: int
     elevation_gain: int
 

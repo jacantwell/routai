@@ -3,26 +3,21 @@ from typing import Dict, Any
 
 from langchain_core.messages import HumanMessage
 
-from app.agent.config import OVERVIEW_PROMPT_ASKING, OVERVIEW_PROMPT_CONFIRMED, create_llm
+from app.agent.config import REVIEWER_SYSTEM_PROMPT, create_llm_with_tools
 from app.models.state import AgentState
+from app.tools import get_location
 
 logger = logging.getLogger(__name__)
 
-_llm = create_llm()
+_llm = create_llm_with_tools(tools=[get_location])
 
 
 def reviewer_node(state: AgentState) -> Dict[str, Any]:
-    """Generate route overview based on confirmation state.
+    """Generate route overview with full state access.
     
-    This node creates a summary of the planned route including:
-    - Total distance and duration
-    - Daily breakdown
-    - Accommodation availability
-    - Any potential issues
-    
-    Behavior depends on user_confirmed flag:
-    - If False: Asks user to confirm or request changes
-    - If True: Confirms route is ready and proceeds
+    This node creates a comprehensive summary of the planned route by giving
+    the LLM direct access to all state data. The LLM can intelligently analyze
+    and present the route information based on the current confirmation status.
     
     Args:
         state: Current agent state with route, segments, and requirements
@@ -33,82 +28,61 @@ def reviewer_node(state: AgentState) -> Dict[str, Any]:
     Raises:
         ValueError: If required data is missing from state
     """
-    requirements = state.requirements
-    route = state.route
-    segments = state.segments
-    user_confirmed = state.user_confirmed
-    
-    # Validate all required data is present
-    if not requirements:
+    # Validate required data is present
+    if not state.requirements:
         error_msg = "Overview generation requires validated requirements"
         logger.error(error_msg)
         raise ValueError(error_msg)
     
-    if not route:
+    if not state.route:
         error_msg = "Overview generation requires a calculated route"
         logger.error(error_msg)
         raise ValueError(error_msg)
     
-    if not segments:
+    if not state.segments:
         error_msg = "Overview generation requires generated segments"
         logger.error(error_msg)
         raise ValueError(error_msg)
     
-    mode = "confirmed" if user_confirmed else "asking"
+    mode = "confirmed" if state.user_confirmed else "asking"
     logger.info(f"Generating route overview (mode: {mode})")
     
-    # Calculate accommodation statistics
-    days_with_accommodation = sum(
-        1 for seg in segments if len(seg.accommodation_options) > 0
-    )
-    days_without_accommodation = len(segments) - days_with_accommodation
+    # Serialize the state for the LLM
+    state_summary = f"""Current Route State:
+
+Requirements:
+- Origin: {state.requirements.origin.name} ({state.requirements.origin.coordinates})
+- Destination: {state.requirements.destination.name} ({state.requirements.destination.coordinates})
+- Daily Distance Target: {state.requirements.daily_distance_km} km
+- Intermediate Stops: {len(state.requirements.intermediates)}
+- Context: {state.requirements.context or 'None provided'}
+
+Overall Route:
+- Total Distance: {state.route.distance / 1000:.1f} km
+- Total Elevation Gain: {state.route.elevation_gain} m
+- Number of Days: {len(state.segments)}
+
+Daily Segments:
+"""
     
-    if days_without_accommodation == 0:
-        accommodation_summary = f"✓ Accommodation found for all {len(segments)} days"
-    else:
-        missing_days = [
-            seg.day for seg in segments if len(seg.accommodation_options) == 0
-        ]
-        accommodation_summary = (
-            f"⚠ Accommodation found for {days_with_accommodation}/{len(segments)} days\n"
-            f"Days without accommodation: {', '.join(map(str, missing_days))}"
-        )
+    for seg in state.segments:
+        accommodation_count = len(seg.accommodation_options)
+        state_summary += f"""
+Day {seg.day}:
+  - Distance: {seg.route.distance / 1000:.1f} km
+  - Elevation Gain: {seg.route.elevation_gain} m
+  - Start: {seg.route.origin.name}
+  - End: {seg.route.destination.name}
+  - Accommodation Options: {accommodation_count}
+"""
     
-    # Create segments summary
-    segments_summary = []
-    for seg in segments:
-        distance = seg.route.distance / 1000
-        accommodation_status = "✓" if len(seg.accommodation_options) > 0 else "⚠"
-        segments_summary.append(
-            f"Day {seg.day}: {distance:.1f} km {accommodation_status}"
-        )
-    segments_str = "\n".join(segments_summary)
-    
-    # Calculate total elevation
-    total_elevation = sum(seg.route.elevation_gain for seg in segments)
-    
-    # Choose prompt based on confirmation state
-    prompt_template = OVERVIEW_PROMPT_CONFIRMED if user_confirmed else OVERVIEW_PROMPT_ASKING
-    
-    # Construct the system prompt with route data
-    system_prompt = prompt_template.format(
-        origin=requirements.origin.name,
-        destination=requirements.destination.name,
-        distance_km=route.distance / 1000,
-        daily_distance_km=requirements.daily_distance_km,
-        num_days=len(segments),
-        elevation_gain=total_elevation,
-        segments_summary=segments_str,
-        accommodation_summary=accommodation_summary,
-    )
+    state_summary += f"\nUser Confirmed: {state.user_confirmed}"
     
     try:
-        # Generate the overview
+        # Generate the overview with full state context
         response = _llm.invoke(
-            [HumanMessage(
-                content="Please create a route overview."
-            )],
-            system=system_prompt,
+            [HumanMessage(content=state_summary)],
+            system=REVIEWER_SYSTEM_PROMPT,
         )
         
         logger.info(f"Route overview generated (mode: {mode})")
