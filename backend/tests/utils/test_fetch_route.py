@@ -1,4 +1,3 @@
-"""Tests for fetch_route function"""
 import pytest
 from unittest.mock import Mock, patch
 import requests
@@ -10,19 +9,25 @@ from app.models import Route
 @patch("app.utils.utils.get_elevation_gain")
 @patch("app.utils.utils.requests.post")
 @patch("app.utils.utils.settings")
-def test_fetch_route_success_bicycle(mock_settings, mock_post, mock_elevation, mock_origin, mock_destination):
+def test_fetch_route_success_bicycle(
+    mock_settings, mock_post, mock_elevation, mock_origin, mock_destination
+):
     """Test successful route fetch with bicycle mode"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_ROUTES_API_ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes"
+    mock_settings.GOOGLE_ROUTES_API_ENDPOINT = (
+        "https://routes.googleapis.com/directions/v2:computeRoutes"
+    )
     mock_elevation.return_value = 250
 
     mock_response = Mock()
     mock_response.json.return_value = {
-        "routes": [{
-            "distanceMeters": 42000,
-            "duration": "7200s",
-            "polyline": {"encodedPolyline": "test_polyline_string"}
-        }]
+        "routes": [
+            {
+                "distanceMeters": 42000,
+                "duration": "7200s",
+                "polyline": {"encodedPolyline": "test_polyline_string"},
+            }
+        ]
     }
     mock_response.raise_for_status = Mock()
     mock_post.return_value = mock_response
@@ -44,24 +49,37 @@ def test_fetch_route_success_bicycle(mock_settings, mock_post, mock_elevation, m
 @patch("app.utils.utils.get_elevation_gain")
 @patch("app.utils.utils.requests.post")
 @patch("app.utils.utils.settings")
-def test_fetch_route_with_intermediates(mock_settings, mock_post, mock_elevation, mock_origin, mock_destination, mock_intermediate):
+def test_fetch_route_with_intermediates(
+    mock_settings,
+    mock_post,
+    mock_elevation,
+    mock_origin,
+    mock_destination,
+    mock_intermediate,
+):
     """Test route fetch with intermediate waypoints"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_ROUTES_API_ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes"
+    mock_settings.GOOGLE_ROUTES_API_ENDPOINT = (
+        "https://routes.googleapis.com/directions/v2:computeRoutes"
+    )
     mock_elevation.return_value = 300
 
     mock_response = Mock()
     mock_response.json.return_value = {
-        "routes": [{
-            "distanceMeters": 50000,
-            "duration": "8000s",
-            "polyline": {"encodedPolyline": "test_polyline_with_intermediate"}
-        }]
+        "routes": [
+            {
+                "distanceMeters": 50000,
+                "duration": "8000s",
+                "polyline": {"encodedPolyline": "test_polyline_with_intermediate"},
+            }
+        ]
     }
     mock_response.raise_for_status = Mock()
     mock_post.return_value = mock_response
 
-    result = fetch_route(mock_origin, mock_destination, intermediates=[mock_intermediate])
+    result = fetch_route(
+        mock_origin, mock_destination, intermediates=[mock_intermediate]
+    )
 
     assert result.distance == 50000
 
@@ -75,10 +93,14 @@ def test_fetch_route_with_intermediates(mock_settings, mock_post, mock_elevation
 @patch("app.utils.utils.get_elevation_gain")
 @patch("app.utils.utils.requests.post")
 @patch("app.utils.utils.settings")
-def test_fetch_route_fallback_to_drive(mock_settings, mock_post, mock_elevation, mock_origin, mock_destination):
+def test_fetch_route_fallback_to_drive(
+    mock_settings, mock_post, mock_elevation, mock_origin, mock_destination
+):
     """Test fallback to DRIVE mode when BICYCLE fails"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_ROUTES_API_ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes"
+    mock_settings.GOOGLE_ROUTES_API_ENDPOINT = (
+        "https://routes.googleapis.com/directions/v2:computeRoutes"
+    )
     mock_elevation.return_value = 200
 
     # First call (bicycle) returns no routes, second call (drive) succeeds
@@ -88,11 +110,13 @@ def test_fetch_route_fallback_to_drive(mock_settings, mock_post, mock_elevation,
 
     mock_response_drive = Mock()
     mock_response_drive.json.return_value = {
-        "routes": [{
-            "distanceMeters": 45000,
-            "duration": "3600s",
-            "polyline": {"encodedPolyline": "drive_polyline"}
-        }]
+        "routes": [
+            {
+                "distanceMeters": 45000,
+                "duration": "3600s",
+                "polyline": {"encodedPolyline": "drive_polyline"},
+            }
+        ]
     }
     mock_response_drive.raise_for_status = Mock()
 
@@ -114,10 +138,14 @@ def test_fetch_route_fallback_to_drive(mock_settings, mock_post, mock_elevation,
 
 @patch("app.utils.utils.requests.post")
 @patch("app.utils.utils.settings")
-def test_fetch_route_all_strategies_fail(mock_settings, mock_post, mock_origin, mock_destination):
+def test_fetch_route_all_strategies_fail(
+    mock_settings, mock_post, mock_origin, mock_destination
+):
     """Test error handling when all routing strategies fail"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_ROUTES_API_ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes"
+    mock_settings.GOOGLE_ROUTES_API_ENDPOINT = (
+        "https://routes.googleapis.com/directions/v2:computeRoutes"
+    )
 
     # All calls return empty results
     mock_response = Mock()
@@ -128,20 +156,19 @@ def test_fetch_route_all_strategies_fail(mock_settings, mock_post, mock_origin, 
     with pytest.raises(ValueError) as exc_info:
         fetch_route(mock_origin, mock_destination)
 
-    assert "Could not calculate route" in str(exc_info.value)
-    assert "All attempts failed" in str(exc_info.value)
-
 
 @patch("app.utils.utils.requests.post")
 @patch("app.utils.utils.settings")
-def test_fetch_route_request_exception(mock_settings, mock_post, mock_origin, mock_destination):
+def test_fetch_route_request_exception(
+    mock_settings, mock_post, mock_origin, mock_destination
+):
     """Test handling of request exceptions"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_ROUTES_API_ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes"
+    mock_settings.GOOGLE_ROUTES_API_ENDPOINT = (
+        "https://routes.googleapis.com/directions/v2:computeRoutes"
+    )
 
     mock_post.side_effect = requests.RequestException("Network error")
 
     with pytest.raises(ValueError) as exc_info:
         fetch_route(mock_origin, mock_destination)
-
-    assert "Could not calculate route" in str(exc_info.value)

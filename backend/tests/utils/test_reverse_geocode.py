@@ -1,4 +1,5 @@
 """Tests for reverse_geocode function"""
+
 from unittest.mock import Mock, patch
 import requests
 
@@ -7,20 +8,29 @@ from app.utils.utils import reverse_geocode
 
 @patch("app.utils.utils.requests.get")
 @patch("app.utils.utils.settings")
-def test_reverse_geocode_success_with_locality(mock_settings, mock_get, mock_coordinate):
+def test_reverse_geocode_success_with_locality(
+    mock_settings, mock_get, mock_coordinate
+):
     """Test successful reverse geocoding with locality result"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = "https://maps.googleapis.com/maps/api/geocode/json"
+    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = (
+        "https://maps.googleapis.com/maps/api/geocode/json"
+    )
 
     mock_response = Mock()
     mock_response.json.return_value = {
         "status": "OK",
         "results": [
+            {"types": ["locality", "political"], "formatted_address": "Leeds, UK"},
             {
-                "types": ["locality", "political"],
-                "formatted_address": "Leeds, UK"
-            }
-        ]
+                "types": ["administrative_area_level_2", "political"],
+                "formatted_address": "West Yorkshire, UK",
+            },
+            {
+                "types": ["administrative_area_level_1", "political"],
+                "formatted_address": "England, UK",
+            },
+        ],
     }
     mock_response.raise_for_status = Mock()
     mock_get.return_value = mock_response
@@ -36,20 +46,29 @@ def test_reverse_geocode_success_with_locality(mock_settings, mock_get, mock_coo
 
 @patch("app.utils.utils.requests.get")
 @patch("app.utils.utils.settings")
-def test_reverse_geocode_success_with_postal_town(mock_settings, mock_get, mock_coordinate):
+def test_reverse_geocode_success_with_postal_town(
+    mock_settings, mock_get, mock_coordinate
+):
     """Test successful reverse geocoding with postal_town result"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = "https://maps.googleapis.com/maps/api/geocode/json"
+    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = (
+        "https://maps.googleapis.com/maps/api/geocode/json"
+    )
 
     mock_response = Mock()
     mock_response.json.return_value = {
         "status": "OK",
         "results": [
+            {"types": ["postal_town"], "formatted_address": "York, UK"},
             {
-                "types": ["postal_town"],
-                "formatted_address": "York, UK"
-            }
-        ]
+                "types": ["administrative_area_level_2", "political"],
+                "formatted_address": "West Yorkshire, UK",
+            },
+            {
+                "types": ["administrative_area_level_1", "political"],
+                "formatted_address": "England, UK",
+            },
+        ],
     }
     mock_response.raise_for_status = Mock()
     mock_get.return_value = mock_response
@@ -61,10 +80,14 @@ def test_reverse_geocode_success_with_postal_town(mock_settings, mock_get, mock_
 
 @patch("app.utils.utils.requests.get")
 @patch("app.utils.utils.settings")
-def test_reverse_geocode_fallback_to_admin_area_2(mock_settings, mock_get, mock_coordinate):
+def test_reverse_geocode_fallback_to_admin_area_2(
+    mock_settings, mock_get, mock_coordinate
+):
     """Test fallback to administrative_area_level_2 when no locality found"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = "https://maps.googleapis.com/maps/api/geocode/json"
+    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = (
+        "https://maps.googleapis.com/maps/api/geocode/json"
+    )
 
     mock_response = Mock()
     mock_response.json.return_value = {
@@ -72,9 +95,13 @@ def test_reverse_geocode_fallback_to_admin_area_2(mock_settings, mock_get, mock_
         "results": [
             {
                 "types": ["administrative_area_level_2", "political"],
-                "formatted_address": "West Yorkshire, UK"
-            }
-        ]
+                "formatted_address": "West Yorkshire, UK",
+            },
+            {
+                "types": ["administrative_area_level_1", "political"],
+                "formatted_address": "England, UK",
+            },
+        ],
     }
     mock_response.raise_for_status = Mock()
     mock_get.return_value = mock_response
@@ -86,10 +113,14 @@ def test_reverse_geocode_fallback_to_admin_area_2(mock_settings, mock_get, mock_
 
 @patch("app.utils.utils.requests.get")
 @patch("app.utils.utils.settings")
-def test_reverse_geocode_fallback_to_admin_area_1(mock_settings, mock_get, mock_coordinate):
+def test_reverse_geocode_fallback_to_admin_area_1(
+    mock_settings, mock_get, mock_coordinate
+):
     """Test fallback to administrative_area_level_1 when no locality or admin_2 found"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = "https://maps.googleapis.com/maps/api/geocode/json"
+    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = (
+        "https://maps.googleapis.com/maps/api/geocode/json"
+    )
 
     mock_response = Mock()
     mock_response.json.return_value = {
@@ -97,9 +128,9 @@ def test_reverse_geocode_fallback_to_admin_area_1(mock_settings, mock_get, mock_
         "results": [
             {
                 "types": ["administrative_area_level_1", "political"],
-                "formatted_address": "England, UK"
+                "formatted_address": "England, UK",
             }
-        ]
+        ],
     }
     mock_response.raise_for_status = Mock()
     mock_get.return_value = mock_response
@@ -111,20 +142,19 @@ def test_reverse_geocode_fallback_to_admin_area_1(mock_settings, mock_get, mock_
 
 @patch("app.utils.utils.requests.get")
 @patch("app.utils.utils.settings")
-def test_reverse_geocode_fallback_to_first_result(mock_settings, mock_get, mock_coordinate):
+def test_reverse_geocode_fallback_to_first_result(
+    mock_settings, mock_get, mock_coordinate
+):
     """Test fallback to first result when no specific type matches"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = "https://maps.googleapis.com/maps/api/geocode/json"
+    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = (
+        "https://maps.googleapis.com/maps/api/geocode/json"
+    )
 
     mock_response = Mock()
     mock_response.json.return_value = {
         "status": "OK",
-        "results": [
-            {
-                "types": ["route"],
-                "formatted_address": "A61, Leeds, UK"
-            }
-        ]
+        "results": [{"types": ["route"], "formatted_address": "A61, Leeds, UK"}],
     }
     mock_response.raise_for_status = Mock()
     mock_get.return_value = mock_response
@@ -136,16 +166,17 @@ def test_reverse_geocode_fallback_to_first_result(mock_settings, mock_get, mock_
 
 @patch("app.utils.utils.requests.get")
 @patch("app.utils.utils.settings")
-def test_reverse_geocode_handles_non_ok_status(mock_settings, mock_get, mock_coordinate):
+def test_reverse_geocode_handles_non_ok_status(
+    mock_settings, mock_get, mock_coordinate
+):
     """Test handling of non-OK status from geocoding API"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = "https://maps.googleapis.com/maps/api/geocode/json"
+    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = (
+        "https://maps.googleapis.com/maps/api/geocode/json"
+    )
 
     mock_response = Mock()
-    mock_response.json.return_value = {
-        "status": "ZERO_RESULTS",
-        "results": []
-    }
+    mock_response.json.return_value = {"status": "ZERO_RESULTS", "results": []}
     mock_response.raise_for_status = Mock()
     mock_get.return_value = mock_response
 
@@ -156,16 +187,17 @@ def test_reverse_geocode_handles_non_ok_status(mock_settings, mock_get, mock_coo
 
 @patch("app.utils.utils.requests.get")
 @patch("app.utils.utils.settings")
-def test_reverse_geocode_handles_empty_results(mock_settings, mock_get, mock_coordinate):
+def test_reverse_geocode_handles_empty_results(
+    mock_settings, mock_get, mock_coordinate
+):
     """Test handling of empty results from geocoding API"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = "https://maps.googleapis.com/maps/api/geocode/json"
+    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = (
+        "https://maps.googleapis.com/maps/api/geocode/json"
+    )
 
     mock_response = Mock()
-    mock_response.json.return_value = {
-        "status": "OK",
-        "results": []
-    }
+    mock_response.json.return_value = {"status": "OK", "results": []}
     mock_response.raise_for_status = Mock()
     mock_get.return_value = mock_response
 
@@ -176,10 +208,14 @@ def test_reverse_geocode_handles_empty_results(mock_settings, mock_get, mock_coo
 
 @patch("app.utils.utils.requests.get")
 @patch("app.utils.utils.settings")
-def test_reverse_geocode_handles_request_exception(mock_settings, mock_get, mock_coordinate):
+def test_reverse_geocode_handles_request_exception(
+    mock_settings, mock_get, mock_coordinate
+):
     """Test handling of request exceptions"""
     mock_settings.GOOGLE_API_KEY = "test_api_key"
-    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = "https://maps.googleapis.com/maps/api/geocode/json"
+    mock_settings.GOOGLE_GEOCODING_API_ENDPOINT = (
+        "https://maps.googleapis.com/maps/api/geocode/json"
+    )
 
     mock_get.side_effect = requests.RequestException("Network error")
 
