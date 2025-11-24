@@ -10,7 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useSession } from "@/contexts/SessionContext";
 import { RouteModal } from "@/components/RouteModal";
 
-const TEXT_DISPLAY_DELAY = 30; // Delay in ms for text display
+const TEXT_DISPLAY_DELAY = 0; // Delay in ms for text display
 
 interface Message {
   id: string;
@@ -149,9 +149,9 @@ export function ChatInterface({ toggleSidebar }: ChatInterfaceProps) {
             )
           );
 
-          await new Promise((resolve) =>
-            setTimeout(resolve, TEXT_DISPLAY_DELAY)
-          );
+          // await new Promise((resolve) =>
+          //   setTimeout(resolve, TEXT_DISPLAY_DELAY)
+          // );
         }
 
         isDisplaying = false;
