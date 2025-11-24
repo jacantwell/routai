@@ -1,12 +1,11 @@
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import patch, Mock
 from pydantic_extra_types.coordinate import Coordinate
 
-from app.tools.accommodation import (
-    find_accommodation_at_location,
-    search_accommodation_for_day,
-)
 from app.models import Accommodation
+from app.tools.accommodation import (find_accommodation_at_location,
+                                     search_accommodation_for_day)
 
 
 @patch("app.tools.accommodation.get_accommodation")

@@ -1,6 +1,8 @@
-from fastapi import Request, Depends
-from app.api.services import SessionManager
 from typing import Annotated
+
+from fastapi import Depends, Request
+
+from app.api.services import SessionManager
 
 
 async def get_session_manager(request: Request) -> SessionManager:

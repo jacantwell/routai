@@ -1,9 +1,10 @@
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 import requests
 
-from app.utils.utils import fetch_route
 from app.models import Route
+from app.utils.utils import fetch_route
 
 
 @patch("app.utils.utils.get_elevation_gain")

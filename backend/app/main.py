@@ -2,16 +2,15 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
 
 from app.api.routes.chats import router as chat_router
 from app.api.routes.sessions import router as session_router
-from app.config.logging import setup_logging
 from app.api.services.session_manager import SessionManager
-
 from app.config import settings, setup_logging
+from app.config.logging import setup_logging
 
 # Setup logging
 setup_logging(level="INFO")

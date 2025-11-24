@@ -6,13 +6,10 @@ from langchain_core.messages import ToolMessage
 from langgraph.types import Command
 
 from app.models import Location
-from app.tools.utils import (
-    convert_place_names_to_locations,
-    geocode_location,
-    recalculate_segments_with_accommodation,
-    validate_route_state,
-    validate_segments_state,
-)
+from app.tools.utils import (convert_place_names_to_locations,
+                             geocode_location,
+                             recalculate_segments_with_accommodation,
+                             validate_route_state, validate_segments_state)
 from app.utils import fetch_route
 
 logger = logging.getLogger(__name__)

@@ -1,10 +1,10 @@
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
 
 from langchain_core.messages import HumanMessage
 
-from app.models import AgentState
 from app.agent.config import ITINERARY_PROMPT_TEMPLATE, create_llm
+from app.models import AgentState
 
 logger = logging.getLogger(__name__)
 

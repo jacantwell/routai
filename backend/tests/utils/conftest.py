@@ -1,5 +1,4 @@
 import pytest
-
 from pydantic_extra_types.coordinate import Coordinate
 
 from app.models import Location

@@ -1,24 +1,22 @@
 import logging
-from langgraph.graph import StateGraph, END
-from langgraph.prebuilt import ToolNode
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph.state import CompiledStateGraph
 
-from app.models.state import AgentState
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import END, StateGraph
+from langgraph.graph.state import CompiledStateGraph
+from langgraph.prebuilt import ToolNode
+
+from app.agent.graph.routing import (route_after_accommodation,
+                                     route_optimiser, route_planner,
+                                     route_reviewer)
 from app.agent.nodes.logistics import find_accommodation_node
-from app.agent.nodes.planner import planner_node, parse_requirements_node
-from app.agent.nodes.router import calculate_route_node, calculate_segments_node
 from app.agent.nodes.optimiser import optimiser_node
+from app.agent.nodes.planner import parse_requirements_node, planner_node
 from app.agent.nodes.reviewer import reviewer_node
+from app.agent.nodes.router import (calculate_route_node,
+                                    calculate_segments_node)
 from app.agent.nodes.writer import itinerary_writer_node
-from app.agent.graph.routing import (
-    route_planner,
-    route_optimiser,
-    route_reviewer,
-    route_after_accommodation,
-)
-from app.tools import get_location, get_weather
-from app.tools import OPTIMISATION_TOOLS
+from app.models.state import AgentState
+from app.tools import OPTIMISATION_TOOLS, get_location, get_weather
 
 logger = logging.getLogger(__name__)
 

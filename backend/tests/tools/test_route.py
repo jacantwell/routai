@@ -1,16 +1,13 @@
-import pytest
-from unittest.mock import patch, Mock
-from pydantic_extra_types.coordinate import Coordinate
-from langgraph.types import Command
+from unittest.mock import Mock, patch
 
-from app.tools.route import (
-    confirm_route,
-    get_route_summary,
-    adjust_daily_distance,
-    add_intermediate_waypoint,
-    remove_intermediate_waypoint,
-    recalculate_complete_route,
-)
+import pytest
+from langgraph.types import Command
+from pydantic_extra_types.coordinate import Coordinate
+
+from app.tools.route import (add_intermediate_waypoint, adjust_daily_distance,
+                             confirm_route, get_route_summary,
+                             recalculate_complete_route,
+                             remove_intermediate_waypoint)
 
 
 def test_confirm_route_success(mock_runtime):

@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 import requests
 
 from app.utils.utils import get_accommodation

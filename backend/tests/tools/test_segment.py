@@ -1,8 +1,9 @@
-import pytest
 from unittest.mock import patch
 
-from app.tools.segment import get_segment_details
+import pytest
+
 from app.models import Segment
+from app.tools.segment import get_segment_details
 
 
 @patch("app.tools.segment.validate_segments_state")

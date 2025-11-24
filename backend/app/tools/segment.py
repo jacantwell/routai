@@ -1,6 +1,6 @@
 import logging
 
-from langchain.tools import tool, ToolRuntime
+from langchain.tools import ToolRuntime, tool
 
 from app.tools.utils import validate_segments_state
 

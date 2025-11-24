@@ -1,6 +1,7 @@
 """Tests for reverse_geocode function"""
 
 from unittest.mock import Mock, patch
+
 import requests
 
 from app.utils.utils import reverse_geocode

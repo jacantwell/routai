@@ -37,6 +37,7 @@ python_functions = ["test_*"]
 [dependency-groups]
 dev = [
     "black>=25.11.0",
+    "isort>=7.0.0",
     "pytest>=8.0.0",
     "pytest-mock>=3.12.0",
 ]

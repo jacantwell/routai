@@ -1,10 +1,4 @@
-from .api import (
-    ChatRequest,
-    ChatResponse,
-    SessionInfo,
-    SessionState,
-    StreamEvent,
-    ErrorResponse,
-)
-from .models import Location, Accommodation, Route, Segment
-from .state import RouteRequirements, AgentState
+from .api import (ChatRequest, ChatResponse, ErrorResponse, SessionInfo,
+                  SessionState, StreamEvent)
+from .models import Accommodation, Location, Route, Segment
+from .state import AgentState, RouteRequirements

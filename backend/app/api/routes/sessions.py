@@ -4,7 +4,7 @@ from typing import Dict
 from fastapi import APIRouter, HTTPException
 
 from app.api.deps import SessionManagerDep
-from app.models import Route, Segment, AgentState
+from app.models import AgentState, Route, Segment
 
 logger = logging.getLogger(__name__)
 

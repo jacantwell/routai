@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
 from pydantic_extra_types.coordinate import Coordinate
 
 from app.tools.location import get_location

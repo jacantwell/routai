@@ -1,8 +1,9 @@
-import pytest
 from unittest.mock import Mock
+
+import pytest
 from pydantic_extra_types.coordinate import Coordinate
 
-from app.models import Location, Route, Segment, Accommodation
+from app.models import Accommodation, Location, Route, Segment
 from app.models.state import AgentState, RouteRequirements
 
 

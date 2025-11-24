@@ -1,16 +1,11 @@
-from .accommodation import find_accommodation_at_location, search_accommodation_for_day
+from .accommodation import (find_accommodation_at_location,
+                            search_accommodation_for_day)
 from .location import get_location
-from .route import (
-    confirm_route,
-    get_route_summary,
-    adjust_daily_distance,
-    add_intermediate_waypoint,
-    remove_intermediate_waypoint,
-    recalculate_complete_route,
-)
+from .route import (add_intermediate_waypoint, adjust_daily_distance,
+                    confirm_route, get_route_summary,
+                    recalculate_complete_route, remove_intermediate_waypoint)
 from .segment import get_segment_details
 from .weather import get_weather
-
 
 # Basic tools for initial planning phase
 PLANNING_TOOLS = [

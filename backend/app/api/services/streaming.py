@@ -7,7 +7,6 @@ from langchain_core.runnables import RunnableConfig
 
 from app.agent.graph.workflow import app
 
-
 logger = logging.getLogger(__name__)
 
 

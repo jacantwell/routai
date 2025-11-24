@@ -2,7 +2,7 @@ import operator
 from typing import Annotated, List, Optional
 
 from langchain_core.messages import BaseMessage
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models import Location, Route, Segment
 

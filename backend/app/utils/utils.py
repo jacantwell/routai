@@ -3,11 +3,11 @@ import random
 
 import polyline
 import requests
-
-from app.config import settings
-from app.models import Accommodation, Route, Segment, Location
 from geopy.distance import geodesic
 from pydantic_extra_types.coordinate import Coordinate
+
+from app.config import settings
+from app.models import Accommodation, Location, Route, Segment
 
 logger = logging.getLogger(__name__)
 

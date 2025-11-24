@@ -1,12 +1,12 @@
 import logging
 from typing import Sequence
 
+import requests
 from langchain.tools import ToolRuntime
 from pydantic_extra_types.coordinate import Coordinate
-import requests
 
 from app.config import settings
-from app.models import AgentState, RouteRequirements, Location, Route, Segment
+from app.models import AgentState, Location, Route, RouteRequirements, Segment
 from app.utils import calculate_segments, get_accommodation
 
 logger = logging.getLogger(__name__)
