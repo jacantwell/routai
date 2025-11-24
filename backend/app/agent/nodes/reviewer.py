@@ -23,7 +23,7 @@ def _check_for_recent_changes(state: AgentState) -> str:
         return ""
 
     recent_tools_used = []
-    for msg in reversed(state.messages[-5:]):  # Check last 5 messages
+    for msg in reversed(state.messages[-5:]):  # Check only last 5 messages
         if hasattr(msg, "tool_calls") and msg.tool_calls:  # type: ignore
             for tool_call in msg.tool_calls:  # type: ignore
                 tool_name = tool_call.get("name", "")
@@ -51,7 +51,7 @@ def _check_for_recent_changes(state: AgentState) -> str:
 
 def _get_recent_tool_outputs(state: AgentState) -> str:
     """Extract content from recent tool executions (like weather data).
-    
+
     The Reviewer generates its overview from static state (segments/route).
     However, if the Optimiser (or Reviewer) just called a tool like get_weather,
     that data exists in the message history as a ToolMessage, not in the static state.
@@ -67,10 +67,10 @@ def _get_recent_tool_outputs(state: AgentState) -> str:
         if isinstance(msg, ToolMessage):
             # We found data!
             tool_outputs.append(f"Data from {msg.name}: {msg.content}")
-    
+
     if not tool_outputs:
         return ""
-        
+
     return "\n\n".join(tool_outputs)
 
 
@@ -130,13 +130,9 @@ def reviewer_node(state: AgentState) -> Dict[str, Any]:
             # This is a response after user feedback
             prompt = REVIEWER_RESPONSE_PROMPT
 
-    # 1. Build the base summary from the Route Object
     base_summary = _build_state_summary(state)
-    
-    # 2. Fetch any "hidden" data from the message history (The Fix)
     tool_data = _get_recent_tool_outputs(state)
 
-    # 3. Combine them
     full_context = base_summary
     if tool_data:
         full_context += f"\n\n=== RECENT TOOL DATA (Weather/Info) ===\n{tool_data}\n\nINSTRUCTION: Incorporate the tool data above into your overview if relevant."
@@ -149,9 +145,9 @@ def reviewer_node(state: AgentState) -> Dict[str, Any]:
     )
 
     updates = {"messages": [response]}
-    
-    # Ensure we set the waiting flag if not confirmed (from previous fix)
+
+    # Ensure we set the waiting flag if not confirmed
     if not state.user_confirmed:
-        updates["awaiting_user_response"] = True
+        updates["awaiting_user_response"] = True  # type: ignore
 
     return updates
