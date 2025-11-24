@@ -27,14 +27,13 @@ Route Details:
 Calculated Segments:
 {segments}
 
-Please write a friendly, comprehensive day-by-day itinerary for the user's bikepacking route. 
+Please write a friendly, day-by-day itinerary for the user's bikepacking route. 
 Include:
 - Daily distances and key waypoints
-- Accommodation recommendations for each night
+- 2 Accommodation recommendations for each night
 - Practical information about each day's journey
-- Any notable features or considerations
 
-Make it detailed and actionable so the user can confidently embark on their journey.
+Make it consice and actionable so the user can confidently embark on their journey.
 """
 
 OPTIMISER_SYSTEM_PROMPT = """You are a route modification agent.
@@ -47,7 +46,7 @@ For INITIAL OPTIMIZATION:
 - Check if any days are missing accommodation -> use search_accommodation
 - Check if any distances are dangerous (>150km or <20km) -> use adjust_daily_distance
 - Call ONE tool if needed, then stop
-- If no critical issues, respond with "No optimization needed"
+- If no critical issues then dont respond
 
 For USER REQUEST:
 - The user's last message describes what they want
@@ -66,8 +65,14 @@ REVIEWER_INITIAL_PROMPT = """Present a comprehensive route overview.
 
 Include:
 - Route summary (origin, destination, total distance)
-- Daily breakdown with accommodation status
 - Any concerns or recommendations
+- Daily breakdown following the format:
+
+   - Day
+   - Destination
+   - Distance
+   - Elevation
+   - 1 Accommodation option
 
 End by asking: "Would you like to proceed with this route or make adjustments?"
 """
