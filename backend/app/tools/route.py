@@ -176,11 +176,8 @@ def add_intermediate_waypoint(
     else:
         new_intermediates.append(waypoint_location)
 
-    # Recalculate route with new waypoint
-    intermediates_coords = [loc.coordinates for loc in new_intermediates]
-
     try:
-        new_route = fetch_route(route.origin, route.destination, intermediates_coords)
+        new_route = fetch_route(route.origin, route.destination, new_intermediates)
     except Exception as e:
         raise ValueError(f"Failed to recalculate route with new waypoint: {str(e)}")
 
@@ -243,11 +240,8 @@ def remove_intermediate_waypoint(runtime: ToolRuntime, waypoint_index: int) -> C
     new_intermediates = requirements.intermediates.copy()
     new_intermediates.pop(waypoint_index)
 
-    # Recalculate route without the waypoint
-    intermediates_coords = [loc.coordinates for loc in new_intermediates]
-
     try:
-        new_route = fetch_route(route.origin, route.destination, intermediates_coords)
+        new_route = fetch_route(route.origin, route.destination, new_intermediates)
     except Exception as e:
         raise ValueError(f"Failed to recalculate route after removal: {str(e)}")
 
@@ -342,11 +336,8 @@ def recalculate_complete_route(
     else:
         intermediates = requirements.intermediates
 
-    # Calculate new route
-    intermediates_coords = [loc.coordinates for loc in intermediates]
-
     try:
-        new_route = fetch_route(origin_coords, destination_coords, intermediates_coords)
+        new_route = fetch_route(origin_location, destination_location, intermediates)
     except Exception as e:
         raise ValueError(f"Failed to calculate new route: {str(e)}")
 
