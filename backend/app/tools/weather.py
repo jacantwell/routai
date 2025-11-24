@@ -1,3 +1,5 @@
+import random
+
 from langchain.tools import tool
 
 
@@ -7,7 +9,7 @@ def get_weather(
 ) -> str:
     """Get current weather and optional forecast."""
     temp = 22 if units == "celsius" else 72
-    result = f"Current weather in {location_name}: {temp} degrees {units[0].upper()}"
+    result = f"Current weather in {location_name}: {random.randint(20,25)} degrees {units[0].upper()}"
     if include_forecast:
         result += "\nNext 5 days: Sunny"
     return result
